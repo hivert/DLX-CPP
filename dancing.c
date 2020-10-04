@@ -253,6 +253,7 @@ void search_rec(int depth) {
 
     if (firstSol == 2)
         return;
+
     if (master.right == &master) {
 #ifdef DEBUG
         spaceDepth(depth);
@@ -277,15 +278,30 @@ void search_rec(int depth) {
         printf("Too Bad !!!\n");
 #endif
         return;
-    } else if ((minSize > 1) && randSol) {
-        int nCol = -1;
-        for (pHead = master.right; pHead != &master;
-             pHead = pHead->right, nCol++)
-            /* Nothing */;
-        int randCol = 1 + (int)(1.0 * nCol * rand() / (RAND_MAX + 1.0));
-        pChooseCol = master.right;
-        for (int iCol = 0; iCol < randCol; iCol++)
-            pChooseCol = pChooseCol->right;
+    }
+
+    if (minSize > 1) {
+        if (randSol == 1) {
+            int nCol = -1;
+            for (pHead = master.right; pHead != &master;
+                 pHead = pHead->right, nCol++)
+                /* Nothing */;
+            int randCol = 1 + (int)(1.0 * nCol * rand() / (RAND_MAX + 1.0));
+            pChooseCol = master.right;
+            for (int iCol = 0; iCol < randCol; iCol++)
+                pChooseCol = pChooseCol->right;
+        } else if (randSol == 2) {
+            // Choose a column at random amoung the minimal ones
+            int nCol = -1;
+            for (pHead = master.right; pHead != &master; pHead = pHead->right)
+                if (pHead->size == minSize) nCol++;
+
+                /* Nothing */;
+            int randCol = 1 + (int)(1.0 * nCol * rand() / (RAND_MAX + 1.0));
+            pChooseCol = master.right;
+            for (int iCol = 0; iCol < randCol; pChooseCol = pChooseCol->right)
+                if (pChooseCol->size == minSize) iCol++;
+        }
     }
 
     cover(pChooseCol);
@@ -307,7 +323,7 @@ int main(int argc, char *const argv[]) {
     long long nparse, nsec, nprint;
     char opt;
 
-    while ((opt = getopt(argc, argv, "nrif012")) != EOF)
+    while ((opt = getopt(argc, argv, "nrRif012")) != EOF)
         switch (opt) {
         case '0':
         case '1':
@@ -319,6 +335,9 @@ int main(int argc, char *const argv[]) {
             break;
         case 'r':
             randSol = 1;
+            break;
+        case 'R':
+            randSol = 2;
             break;
         case 'n':
             onlyNbSol = 1;
