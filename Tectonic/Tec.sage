@@ -359,6 +359,8 @@ class TT(object):
                 continue
             if line.startswith("%T"):
                 print(line[3 : -1])
+                if line.startswith("%T Number of solutions: "):
+                    nsol = int(line[24 : -1])
             elif line == "Solution:\n":
                 rdsol = True
                 sol = {}
@@ -377,7 +379,7 @@ class TT(object):
                                  r, c = (int(v) for v in s.split('_')[1:])
                         sol[(r, c)] = l
         respipe.close()
-        return res
+        return nsol, res
 
     def solve(self):
         r"""
@@ -478,6 +480,46 @@ class TT(object):
         res = [x for x in res if x is not None]
         return {(r, c) : l for (r, c, l, _) in res}
 
+    def rand_sol(self):
+        r"""
+        sage: Tes = TT(["AAAB", "CAAB", "CCBB", "CCDD", "EEDD"], {})
+        sage: P, S = Tes.rand_sol()
+        """
+        nsol, Sols = self.call_external(["-R", "-f"])
+        if nsol == 0:
+            raise ValueError
+        Sol = Sols[0]
+        print("Found one !!!")
+        print(self.update_hints(Sol))
+        def up_place(hints):
+            return self.update_hints({(i, j) : Sol[(i, j)] for (i, j) in hints})
+        places = Permutations(Sol.keys()).random_element()
+
+        nhints = -1
+        for i in range(len(places)-1, -1, -1):
+            Tnew = up_place(places[:i])
+            nsol = Tnew.call_external(["-0"])[0]
+            if (nsol != 1):
+                nhints = i
+                break
+
+        print("==================================== %i"%nhints)
+        i = 0
+        hints = places[:nhints+1]
+        while (i < len(hints)):
+            new_hints = hints[:]
+            print(hints[i])
+            del new_hints[i]
+            Tnew = up_place(new_hints)
+            print(Tnew)
+            nsol = Tnew.call_external(["-0"])[0]
+            if nsol == 1:
+                print("Removed hints %i"%i)
+                hints = new_hints
+            else:
+                i += 1
+        return up_place(hints), up_place(Sol)
+
 T28_151 = TT(["ABBBCCDDD",
               "AAECCFFDD",
               "AAECGFFFH",
@@ -496,3 +538,35 @@ T28_151 = TT(["ABBBCCDDD",
               (8, 8) : 5,
               (10, 1): 4, (10, 2):1, (10, 8) : 5})
 
+TNEW    = TT(["AAABCCDDD",
+              "AABBCCEDD",
+              "IIHBCEEFF",
+              "IIHHHEFFF",
+              "KIHMMNNNG",
+              "KKKMMMNNG"],
+             {})
+
+TNEW2   = TT(["AAABCC",
+              "AABBCC",
+              "IIHBCE",
+              "IIHHHE",
+              "KIHMME",
+              "KKKMMM"],
+             {})
+
+TNEW3   = TT(["AAACCC",
+              "AABBCC",
+              "IIHBBE",
+              "IIHHHE",
+              "KIHMME",
+              "KKKMMM"],
+             {})
+
+TNEW4   = TT(["AAACCCF",
+              "AABBCCE",
+              "IIHBBEE",
+              "IIHHHEG",
+              "KIHMMEG",
+              "KKKMMMG",
+              "KXXXYYY"],
+             {})
