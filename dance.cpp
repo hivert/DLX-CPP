@@ -10,52 +10,156 @@ __attribute__((noreturn)) void fatal(const char *msg) {
     exit(EXIT_FAILURE);
 }
 
-void DLXMatrix::new_column(const char * name) {
-    Header *pHead = new Header();
 
-    std::strncpy(pHead->name, name, MAXNAME);
-    pHead->size = 0;
-
-    pHead->right = &master;
-    pHead->left = master.left;
-    pHead->left->right = master.left = pHead;
-
-    pHead->node.up = pHead->node.down = &pHead->node;
-}
-void DLXMatrix::new_column(const std::string name) {
-    new_column(name.c_str());
+DLXMatrix::DLXMatrix(int nb_col) : heads(nb_col+1) {
+    for (int i = 0; i <= nb_col; i++) {
+        heads[i].size  = 0;
+        heads[i].col_id = i;
+        heads[i].node.row_id = -1;
+        heads[i].node.head = &heads[i];
+        heads[i].node.left = heads[i].node.right = NULL; // unused
+        heads[i].node.up = heads[i].node.down = &heads[i].node;
+    }
+    heads[nb_col].right = &heads[0];
+    for (int i = 0; i < nb_col; i++) heads[i].right = &heads[i+1];
+    heads[0].left = &heads[nb_col];
+    for (int i = 1; i <= nb_col; i++) heads[i].left = &heads[i-1];
 }
 
 void DLXMatrix::print_columns() const {
-    for (Header *h = master.right; h != &master; h = h->right) {
-        std::cout << h->name << "(" << h->size << ") ";
+    for (Header *h = master()->right; h != master(); h = h->right) {
+        std::cout << h->col_id << "(" << h->size << ") ";
     }
     std::cout << std::endl;
 }
 
-Header *DLXMatrix::find_column(const char name[]) {
-    Header *pHead;
-    for (pHead = master.right; pHead != &master; pHead = pHead->right)
-        if (strcmp(name, pHead->name) == 0)
-            return pHead;
-    std::cerr << "Unkown column name \"" << name << "\"" << std::endl;
-    fatal("Bad matrix");
+void DLXMatrix::check_sizes() const {
+    std::cout << "\nsizes: [ ";
+    for (Header *h = master()->right; h != master(); h = h->right) {
+        int irows = 0;
+        for (Node *p = h->node.down; p != &h->node; irows++, p = p->down)
+            /* Nothing */;
+        if (h->size != irows)
+            fatal("wrong size of column");
+        std::cout << h->col_id << "(" << irows << ") ";
+    }
+    printf("]\n");
 }
-Header *DLXMatrix::find_column(const std::string s) {
-    return find_column(s.c_str());
+
+void DLXMatrix::new_row(int row_id, const std::vector<int> r) {
+    rows.push_back(std::vector<Node>(r.size()));
+    std::vector<Node> & row = rows[rows.size()-1];
+
+    for (size_t i = 0; i < r.size(); i++) {
+        unsigned int icol = r[i];
+        if (not (0 < icol and icol < heads.size()))
+            fatal("No such column !");
+        row[i].row_id = row_id;
+        row[i].head = &heads[icol];
+        heads[icol].size++;
+        row[i].down = &heads[icol].node;
+        row[i].up = heads[icol].node.up;
+        row[i].up->down = heads[icol].node.up = &row[i];
+    }
+    row[r.size()-1].right = &row[0];
+    for (size_t i = 0; i < r.size()-1; i++) row[i].right = &row[i+1];
+    row[0].left = &row[r.size()-1];
+    for (size_t i = 1; i < r.size(); i++) row[i].left = &row[i-1];
 }
+
+
+void DLXMatrix::cover(Header *pCol) {
+    pCol->left->right = pCol->right;
+    pCol->right->left = pCol->left;
+
+    for (Node *pRow = pCol->node.down; pRow != &pCol->node;
+         pRow = pRow->down) {
+        for (Node *pElt = pRow->right; pElt != pRow; pElt = pElt->right) {
+            pElt->up->down = pElt->down;
+            pElt->down->up = pElt->up;
+            pElt->head->size--;
+            nb_dances++;
+        }
+    }
+}
+
+void DLXMatrix::uncover(Header *pCol) {
+    pCol->left->right = pCol;
+    pCol->right->left = pCol;
+
+    for (Node *pRow = pCol->node.up; pRow != &pCol->node; pRow = pRow->up) {
+        for (Node *pElt = pRow->left; pElt != pRow; pElt = pElt->left) {
+            pElt->head->size++;
+            pElt->up->down = pElt;
+            pElt->down->up = pElt;
+        }
+    }
+}
+
+
+void DLXMatrix::print_solution() const {
+    std::cout << "Solution:\n";
+    for (Node * n : solution) std::cout << " " << n->row_id;
+    std::cout << "\nEnd\n" << std::endl;
+}
+
+
+Header *DLXMatrix::choose_min() {
+    Header *choice = master()->right;
+    int min_size = choice->size;
+    for (Header *h = choice->right; h != master(); h = h->right) {
+        if (h->size < min_size) {
+            choice = h;
+            min_size = h->size;
+        }
+    }
+    return choice;
+}
+
+void DLXMatrix::search(int maxsol) {
+    nb_solutions = nb_choices = nb_dances = 0;
+    search_rec(maxsol);
+}
+
+// Knuth dancing links search algorithm
+// Recusive version
+///////////////////////////////////////
+void DLXMatrix::search_rec(int maxsol) {
+    if (master()->right == master()) {
+        nb_solutions++;
+        solution = work;
+        print_solution();
+        return;
+    }
+
+    Header *choice = choose_min();
+    if (choice->size == 0) {
+        return;
+    }
+
+    cover(choice);
+    for (Node *r = choice->node.down; r != &choice->node; r = r->down) {
+        nb_choices++;
+        work.push_back(r);
+        for (Node *nr = r->right; nr != r; nr = nr->right) cover(nr->head);
+        search_rec(maxsol);
+        for (Node *nr = r->left; nr != r; nr = nr->left) uncover(nr->head);
+        work.pop_back();
+        if (nb_solutions >= maxsol) break;
+    }
+    uncover(choice);
+}
+
 
 int main() {
-    DLXMatrix M;
-
-    M.new_column("toto");
-    M.new_column("tata");
-    M.new_column("tu");
-    M.new_column("titi");
+    DLXMatrix M(5);
+    M.new_row(1, {1,3});
+    M.new_row(2, {1,2});
+    M.new_row(3, {2,5});
+    M.new_row(4, {4});
+    M.new_row(5, {4,5});
+    M.new_row(6, {3,4,5});
     M.print_columns();
-
-    std::cout << M.find_column("tata") << std::endl;
-
-    std::string s = "tat";
-    std::cout << M.find_column(s) << std::endl;
+    M.check_sizes();
+    M.search(2);
 }

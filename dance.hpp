@@ -3,42 +3,50 @@
 #include <utility>
 #include <cstdint>
 #include <array>
+#include <vector>
 #include <string>
-
-const std::size_t MAXNAME = 16;
-const int MAXDEPTH = 1000;
+#include <stack>
 
 struct Header;
 struct Node {
+    int row_id;
     Node *left, *right, *up, *down;
     Header *head;
 };
 
 struct Header {
     Node node;
-    char name[MAXNAME];
-    int size;
+    int col_id, size;
     Header *left, *right;
 };
 
 
 class DLXMatrix {
 public:
-    DLXMatrix() {
-        master.name[0] = '\0';
-        master.left = master.right = &master;
-    }
-
-    void new_column(const char *);
-    void new_column(const std::string);
+    DLXMatrix(int nb_col);
 
     void print_columns() const;
-    Header *find_column(const char name[]);
-    Header *find_column(const std::string);
+    void check_sizes() const;
+
+    Header *master() { return &heads[0]; }
+    const Header *master() const { return &heads[0]; }
+
+    void new_row(int, const std::vector<int>);
+
+    void cover(Header *);
+    void uncover(Header *);
+
+    void search_rec(int);
+    void search(int);
+    void print_solution() const;
 
 private:
-    Header master;
-    std::array<Node *, MAXDEPTH> work, solution;
-    int depthSol = 0;
-    int nSolutions = 0, nChoices = 0, nDances = 0;
+
+    Header *choose_min();
+
+    std::vector<Header> heads;
+    std::vector<std::vector<Node>> rows;
+
+    std::vector<Node *> work, solution;
+    int nb_solutions, nb_choices, nb_dances;
 };

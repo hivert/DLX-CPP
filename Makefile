@@ -1,6 +1,6 @@
 SHELL = /bin/sh
 CFLAGS = -Wall -lrt $(DEBUG)
-CPPFLAGS= -Wall -std=c++17 -O3
+CPPFLAGS= -Wall -std=c++17 -g # -O3
 CC = gcc
 
 MAIN_FILES = dancing sudoku2dance sol2sudoku sol2mupad dance
