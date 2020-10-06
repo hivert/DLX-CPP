@@ -49,7 +49,7 @@ void DLXMatrix::check_sizes() const {
 int DLXMatrix::add_row(const std::vector<int> r) {
     int row_id = rows.size();
     rows.push_back(std::vector<Node>(r.size()));
-    std::vector<Node> & row = rows[rows.size()-1];
+    std::vector<Node> & row = rows.back();
 
     for (size_t i = 0; i < r.size(); i++) {
         unsigned int icol = r[i]+1;
@@ -62,9 +62,9 @@ int DLXMatrix::add_row(const std::vector<int> r) {
         row[i].up = heads[icol].node.up;
         row[i].up->down = heads[icol].node.up = &row[i];
     }
-    row[r.size()-1].right = &row[0];
+    row.back().right = &row[0];
     for (size_t i = 0; i < r.size()-1; i++) row[i].right = &row[i+1];
-    row[0].left = &row[r.size()-1];
+    row[0].left = &row.back();
     for (size_t i = 1; i < r.size(); i++) row[i].left = &row[i-1];
     return row_id;
 }
@@ -148,13 +148,66 @@ void DLXMatrix::search_rec(int maxsol) {
     for (Node *r = choice->node.down; r != &choice->node; r = r->down) {
         nb_choices++;
         work.push_back(r);
-        for (Node *nr = r->right; nr != r; nr = nr->right) cover(nr->head);
+        for (Node *nr = r->right; nr != r; nr = nr->right)
+            cover(nr->head);
         search_rec(maxsol);
-        for (Node *nr = r->left; nr != r; nr = nr->left) uncover(nr->head);
+        for (Node *nr = r->left; nr != r; nr = nr->left)
+            uncover(nr->head);
         work.pop_back();
         if (nb_solutions >= maxsol) break;
     }
     uncover(choice);
+}
+
+
+// Knuth dancing links search algorithm
+// Iterative version
+///////////////////////////////////////
+void DLXMatrix::search_iter(int maxsol) {
+    bool call = true;
+    Header *choice;
+    Node   *r;
+    do {
+	while (call) {
+	    if (master()->right == master()) {
+                nb_solutions++;
+                solution = work;
+                print_solution();
+                work.pop_back();
+		call = false;
+	    } else {
+                choice = choose_min();
+		if (choice->size == 0) {
+                    work.pop_back();
+		    call = false;
+		} else {
+		    cover(choice);
+		    r = choice->node.down;
+		    nb_choices++;
+                    for (Node *nr = r->right; nr != r; nr = nr->right)
+                        cover(nr->head);
+                    work.push_back(r);
+		}
+	    }
+        }
+	while ((not call) && (not work.empty())) {
+            r = work.back();
+            work.pop_back();
+            choice = r->head;
+            for (Node *nr = r->left; nr != r; nr = nr->left)
+                uncover(nr->head);
+	    r = r->down;
+	    if (r != &choice->node) {
+		call = true;
+		nb_choices++;
+                for (Node *nr = r->right; nr != r; nr = nr->right)
+                    cover(nr->head);
+                work.push_back(r);
+	    } else {
+		uncover(choice);
+	    }
+	}
+    } while (not work.empty());
 }
 
 
@@ -171,5 +224,6 @@ int main() {
     M.print_columns();
     M.check_sizes();
     M.search(2);
+    M.search_iter(2);
 }
  

@@ -33,6 +33,7 @@ public:
     int add_row(const std::vector<int>);
 
     void search(int);
+    void search_iter(int);
     void print_solution() const;
 
 protected:
