@@ -7,42 +7,44 @@
 #include <string>
 #include <stack>
 
-struct Header;
-struct Node {
-    int row_id;
-    Node *left, *right, *up, *down;
-    Header *head;
-};
-
-struct Header {
-    Node node;
-    int col_id, size;
-    Header *left, *right;
-};
-
 
 class DLXMatrix {
+
+    struct Header;
+    struct Node {
+        int row_id;
+        Node *left, *right, *up, *down;
+        Header *head;
+    };
+
+    struct Header {
+        int col_id, size;
+        Node node;
+        Header *left, *right;
+    };
+
 public:
+
     DLXMatrix(int nb_col);
 
     void print_columns() const;
     void check_sizes() const;
 
-    Header *master() { return &heads[0]; }
-    const Header *master() const { return &heads[0]; }
+    int add_row(const std::vector<int>);
 
-    void new_row(int, const std::vector<int>);
-
-    void cover(Header *);
-    void uncover(Header *);
-
-    void search_rec(int);
     void search(int);
     void print_solution() const;
 
 private:
 
+    Header *master() { return &heads[0]; }
+    const Header *master() const { return &heads[0]; }
+
     Header *choose_min();
+    void cover(Header *);
+    void uncover(Header *);
+
+    void search_rec(int);
 
     std::vector<Header> heads;
     std::vector<std::vector<Node>> rows;

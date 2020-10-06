@@ -14,7 +14,7 @@ __attribute__((noreturn)) void fatal(const char *msg) {
 DLXMatrix::DLXMatrix(int nb_col) : heads(nb_col+1) {
     for (int i = 0; i <= nb_col; i++) {
         heads[i].size  = 0;
-        heads[i].col_id = i;
+        heads[i].col_id = i-1;
         heads[i].node.row_id = -1;
         heads[i].node.head = &heads[i];
         heads[i].node.left = heads[i].node.right = NULL; // unused
@@ -34,7 +34,7 @@ void DLXMatrix::print_columns() const {
 }
 
 void DLXMatrix::check_sizes() const {
-    std::cout << "\nsizes: [ ";
+    std::cout << "sizes: [ ";
     for (Header *h = master()->right; h != master(); h = h->right) {
         int irows = 0;
         for (Node *p = h->node.down; p != &h->node; irows++, p = p->down)
@@ -46,12 +46,13 @@ void DLXMatrix::check_sizes() const {
     printf("]\n");
 }
 
-void DLXMatrix::new_row(int row_id, const std::vector<int> r) {
+int DLXMatrix::add_row(const std::vector<int> r) {
+    int row_id = rows.size();
     rows.push_back(std::vector<Node>(r.size()));
     std::vector<Node> & row = rows[rows.size()-1];
 
     for (size_t i = 0; i < r.size(); i++) {
-        unsigned int icol = r[i];
+        unsigned int icol = r[i]+1;
         if (not (0 < icol and icol < heads.size()))
             fatal("No such column !");
         row[i].row_id = row_id;
@@ -65,6 +66,7 @@ void DLXMatrix::new_row(int row_id, const std::vector<int> r) {
     for (size_t i = 0; i < r.size()-1; i++) row[i].right = &row[i+1];
     row[0].left = &row[r.size()-1];
     for (size_t i = 1; i < r.size(); i++) row[i].left = &row[i-1];
+    return row_id;
 }
 
 
@@ -99,12 +101,17 @@ void DLXMatrix::uncover(Header *pCol) {
 
 void DLXMatrix::print_solution() const {
     std::cout << "Solution:\n";
-    for (Node * n : solution) std::cout << " " << n->row_id;
-    std::cout << "\nEnd\n" << std::endl;
+    for (Node * n : solution) {
+        std::cout << " " << n->row_id << " :";
+        for (const Node &i : rows[n->row_id])
+            std::cout << " " << i.head->col_id;
+        std::cout << "\n";
+    }
+    std::cout << "End" << std::endl;
 }
 
 
-Header *DLXMatrix::choose_min() {
+DLXMatrix::Header *DLXMatrix::choose_min() {
     Header *choice = master()->right;
     int min_size = choice->size;
     for (Header *h = choice->right; h != master(); h = h->right) {
@@ -153,12 +160,12 @@ void DLXMatrix::search_rec(int maxsol) {
 
 int main() {
     DLXMatrix M(5);
-    M.new_row(1, {1,3});
-    M.new_row(2, {1,2});
-    M.new_row(3, {2,5});
-    M.new_row(4, {4});
-    M.new_row(5, {4,5});
-    M.new_row(6, {3,4,5});
+    M.add_row({0,2});
+    M.add_row({0,1});
+    M.add_row({1,4});
+    M.add_row({3});
+    M.add_row({3,4});
+    M.add_row({2,3,4});
     M.print_columns();
     M.check_sizes();
     M.search(2);
