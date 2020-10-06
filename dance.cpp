@@ -70,38 +70,9 @@ int DLXMatrix::add_row(const std::vector<int> r) {
 }
 
 
-void DLXMatrix::cover(Header *pCol) {
-    pCol->left->right = pCol->right;
-    pCol->right->left = pCol->left;
-
-    for (Node *pRow = pCol->node.down; pRow != &pCol->node;
-         pRow = pRow->down) {
-        for (Node *pElt = pRow->right; pElt != pRow; pElt = pElt->right) {
-            pElt->up->down = pElt->down;
-            pElt->down->up = pElt->up;
-            pElt->head->size--;
-            nb_dances++;
-        }
-    }
-}
-
-void DLXMatrix::uncover(Header *pCol) {
-    pCol->left->right = pCol;
-    pCol->right->left = pCol;
-
-    for (Node *pRow = pCol->node.up; pRow != &pCol->node; pRow = pRow->up) {
-        for (Node *pElt = pRow->left; pElt != pRow; pElt = pElt->left) {
-            pElt->head->size++;
-            pElt->up->down = pElt;
-            pElt->down->up = pElt;
-        }
-    }
-}
-
-
-void DLXMatrix::print_solution() const {
-    std::cout << "Solution:\n";
-    for (Node * n : solution) {
+void DLXMatrix::print_solution(const std::vector<Node *> &solution) const {
+    std::cout << "Solution: (size = " << work.size() << ") : \n";
+    for (const Node *n : solution) {
         std::cout << " " << n->row_id << " :";
         for (const Node &i : rows[n->row_id])
             std::cout << " " << i.head->col_id;
@@ -109,6 +80,46 @@ void DLXMatrix::print_solution() const {
     }
     std::cout << "End" << std::endl;
 }
+
+
+
+void DLXMatrix::cover(Header *col) {
+    col->left->right = col->right;
+    col->right->left = col->left;
+
+    for (Node *row = col->node.down; row != &col->node; row = row->down) {
+        for (Node *nr = row->right; nr != row; nr = nr->right) {
+            nr->up->down = nr->down;
+            nr->down->up = nr->up;
+            nr->head->size--;
+            nb_dances++;
+        }
+    }
+}
+void DLXMatrix::choose(Node *row) {
+    nb_choices++;
+    work.push_back(row);
+    for (Node *nr = row->right; nr != row; nr = nr->right) cover(nr->head);
+}
+
+
+void DLXMatrix::uncover(Header *col) {
+    col->left->right = col;
+    col->right->left = col;
+
+    for (Node *row = col->node.up; row != &col->node; row = row->up) {
+        for (Node *nr = row->left; nr != row; nr = nr->left) {
+            nr->head->size++;
+            nr->up->down = nr;
+            nr->down->up = nr;
+        }
+    }
+}
+void DLXMatrix::unchoose(Node *row) {
+    for (Node *nr = row->left; nr != row; nr = nr->left) uncover(nr->head);
+    work.pop_back();
+}
+
 
 
 DLXMatrix::Header *DLXMatrix::choose_min() {
@@ -123,43 +134,30 @@ DLXMatrix::Header *DLXMatrix::choose_min() {
     return choice;
 }
 
-void DLXMatrix::search(int maxsol) {
-    nb_solutions = nb_choices = nb_dances = 0;
-    search_rec(maxsol);
-}
 
-void DLXMatrix::choose(Node *nd) {
-    nb_choices++;
-    work.push_back(nd);
-    for (Node *nr = nd->right; nr != nd; nr = nr->right) cover(nr->head);
-}
-
-void DLXMatrix::unchoose(Node *nd) {
-    for (Node *nr = nd->left; nr != nd; nr = nr->left) uncover(nr->head);
-    work.pop_back();
-}
 
 // Knuth dancing links search algorithm
 // Recusive version
 ///////////////////////////////////////
+void DLXMatrix::search(int maxsol) {
+    nb_solutions = nb_choices = nb_dances = 0;
+    search_rec(maxsol);
+}
 void DLXMatrix::search_rec(int maxsol) {
     if (master()->right == master()) {
         nb_solutions++;
-        solution = work;
-        print_solution();
+        print_solution(work);
         return;
     }
 
     Header *choice = choose_min();
-    if (choice->size == 0) {
-        return;
-    }
+    if (choice->size == 0) return;
 
     cover(choice);
-    for (Node *nd = choice->node.down; nd != &choice->node; nd = nd->down) {
-        choose(nd);
+    for (Node *row = choice->node.down; row != &choice->node; row = row->down) {
+        choose(row);
         search_rec(maxsol);
-        unchoose(nd);
+        unchoose(row);
         if (nb_solutions >= maxsol) break;
     }
     uncover(choice);
@@ -170,13 +168,20 @@ void DLXMatrix::search_rec(int maxsol) {
 // Iterative version
 ///////////////////////////////////////
 void DLXMatrix::search_iter(int maxsol) {
+    nb_solutions = nb_choices = nb_dances = 0;
     do {
 	while (true) { // going down the recursion
 	    if (master()->right == master()) {
                 nb_solutions++;
-                solution = work;
-                print_solution();
-                work.pop_back();
+                print_solution(work);
+                if (nb_solutions >= maxsol) {
+                    while (not work.empty()) {
+                        Node *row = work.back();
+                        unchoose(row);
+                        uncover(row->head);
+                    }
+                    return;
+                }
 		break;
 	    }
             Header *choice = choose_min();
@@ -188,12 +193,12 @@ void DLXMatrix::search_iter(int maxsol) {
             choose(choice->node.down);
         }
 	while (not work.empty()) { // going up the recursion
-            Node *nd = work.back();
-            Header *choice = nd->head;
-            unchoose(nd);
-	    nd = nd->down;
-	    if (nd != &choice->node) {
-                choose(nd);
+            Node *row = work.back();
+            Header *choice = row->head;
+            unchoose(row);
+	    row = row->down;
+	    if (row != &choice->node) {
+                choose(row);
                 break;
 	    }
             uncover(choice);
@@ -211,10 +216,15 @@ int main() {
     M.add_row({3});
     M.add_row({3,4});
     M.add_row({5});
+    M.add_row({1});
+    M.add_row({0,1,2});
     M.add_row({2,3,4});
-    M.print_columns();
+    M.add_row({1,4,5});
     M.check_sizes();
-    M.search(2);
-    M.search_iter(2);
+    const int maxsol = 3;
+    std::cout << "Recursive ========================= \n";
+    M.search(maxsol);
+    std::cout << "Iterative ========================= \n";
+    M.search_iter(maxsol);
 }
  

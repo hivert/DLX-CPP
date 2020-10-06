@@ -34,7 +34,7 @@ public:
 
     void search(int);
     void search_iter(int);
-    void print_solution() const;
+    void print_solution(const std::vector<Node *> &) const;
 
 protected:
 
@@ -57,6 +57,6 @@ private:
     std::vector<Header> heads;
     std::vector<std::vector<Node>> rows;
 
-    std::vector<Node *> work, solution;
+    std::vector<Node *> work;
     int nb_solutions, nb_choices, nb_dances;
 };
