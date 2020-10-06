@@ -35,6 +35,12 @@ public:
     void search(int);
     void print_solution() const;
 
+protected:
+
+    DLXMatrix() = delete;
+    DLXMatrix( const DLXMatrix& ) = delete; // non construction-copyable
+    DLXMatrix& operator=( const DLXMatrix& ) = delete; // non copyable
+
 private:
 
     Header *master() { return &heads[0]; }

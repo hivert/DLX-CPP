@@ -159,14 +159,17 @@ void DLXMatrix::search_rec(int maxsol) {
 
 
 int main() {
-    DLXMatrix M(5);
+    DLXMatrix M(6);
+
     M.add_row({0,2});
     M.add_row({0,1});
     M.add_row({1,4});
     M.add_row({3});
     M.add_row({3,4});
+    M.add_row({5});
     M.add_row({2,3,4});
     M.print_columns();
     M.check_sizes();
     M.search(2);
 }
+ 
