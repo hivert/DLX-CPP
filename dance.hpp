@@ -50,7 +50,8 @@ private:
     Header *choose_min();
     void cover(Header *);
     void uncover(Header *);
-
+    void choose(Node *);
+    void unchoose(Node *);
     void search_rec(int);
 
     std::vector<Header> heads;

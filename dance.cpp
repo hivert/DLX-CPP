@@ -128,6 +128,17 @@ void DLXMatrix::search(int maxsol) {
     search_rec(maxsol);
 }
 
+void DLXMatrix::choose(Node *nd) {
+    nb_choices++;
+    work.push_back(nd);
+    for (Node *nr = nd->right; nr != nd; nr = nr->right) cover(nr->head);
+}
+
+void DLXMatrix::unchoose(Node *nd) {
+    for (Node *nr = nd->left; nr != nd; nr = nr->left) uncover(nr->head);
+    work.pop_back();
+}
+
 // Knuth dancing links search algorithm
 // Recusive version
 ///////////////////////////////////////
@@ -145,15 +156,10 @@ void DLXMatrix::search_rec(int maxsol) {
     }
 
     cover(choice);
-    for (Node *r = choice->node.down; r != &choice->node; r = r->down) {
-        nb_choices++;
-        work.push_back(r);
-        for (Node *nr = r->right; nr != r; nr = nr->right)
-            cover(nr->head);
+    for (Node *nd = choice->node.down; nd != &choice->node; nd = nd->down) {
+        choose(nd);
         search_rec(maxsol);
-        for (Node *nr = r->left; nr != r; nr = nr->left)
-            uncover(nr->head);
-        work.pop_back();
+        unchoose(nd);
         if (nb_solutions >= maxsol) break;
     }
     uncover(choice);
@@ -164,48 +170,33 @@ void DLXMatrix::search_rec(int maxsol) {
 // Iterative version
 ///////////////////////////////////////
 void DLXMatrix::search_iter(int maxsol) {
-    bool call = true;
-    Header *choice;
-    Node   *r;
     do {
-	while (call) {
+	while (true) { // going down the recursion
 	    if (master()->right == master()) {
                 nb_solutions++;
                 solution = work;
                 print_solution();
                 work.pop_back();
-		call = false;
-	    } else {
-                choice = choose_min();
-		if (choice->size == 0) {
-                    work.pop_back();
-		    call = false;
-		} else {
-		    cover(choice);
-		    r = choice->node.down;
-		    nb_choices++;
-                    for (Node *nr = r->right; nr != r; nr = nr->right)
-                        cover(nr->head);
-                    work.push_back(r);
-		}
+		break;
 	    }
+            Header *choice = choose_min();
+            if (choice->size == 0) {
+                work.pop_back();
+                break;
+            }
+            cover(choice);
+            choose(choice->node.down);
         }
-	while ((not call) && (not work.empty())) {
-            r = work.back();
-            work.pop_back();
-            choice = r->head;
-            for (Node *nr = r->left; nr != r; nr = nr->left)
-                uncover(nr->head);
-	    r = r->down;
-	    if (r != &choice->node) {
-		call = true;
-		nb_choices++;
-                for (Node *nr = r->right; nr != r; nr = nr->right)
-                    cover(nr->head);
-                work.push_back(r);
-	    } else {
-		uncover(choice);
+	while (not work.empty()) { // going up the recursion
+            Node *nd = work.back();
+            Header *choice = nd->head;
+            unchoose(nd);
+	    nd = nd->down;
+	    if (nd != &choice->node) {
+                choose(nd);
+                break;
 	    }
+            uncover(choice);
 	}
     } while (not work.empty());
 }
