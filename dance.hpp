@@ -30,19 +30,22 @@ public:
     void print_columns() const;
     void check_sizes() const;
 
-    int add_row(const std::vector<int>);
+    int add_row(const std::vector<int>&);
 
     void search(int);
-    void search_iter(int);
+    void search_iter();
+    void reset();
+
     void print_solution(const std::vector<Node *> &) const;
+
+    DLXMatrix(const DLXMatrix &);
+    DLXMatrix& operator=(DLXMatrix other);
+
+    int nb_solutions, nb_choices, nb_dances;
 
 protected:
 
     DLXMatrix() = delete;
-    DLXMatrix( const DLXMatrix& ) = delete; // non construction-copyable
-    DLXMatrix& operator=( const DLXMatrix& ) = delete; // non copyable
-
-private:
 
     Header *master() { return &heads[0]; }
     const Header *master() const { return &heads[0]; }
@@ -54,9 +57,12 @@ private:
     void unchoose(Node *);
     void search_rec(int);
 
+    std::vector<int> row_to_intvector(const std::vector<Node>&) const;
+
     std::vector<Header> heads;
     std::vector<std::vector<Node>> rows;
 
     std::vector<Node *> work;
-    int nb_solutions, nb_choices, nb_dances;
+    bool search_down;
+
 };
