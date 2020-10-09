@@ -11,10 +11,18 @@ __attribute__((noreturn)) void fatal(const char *msg) {
     exit(EXIT_FAILURE);
 }
 
-std::vector<int> DLXMatrix::row_to_intvector(const std::vector<Node>&row) const {
+
+std::vector<int> DLXMatrix::row_to_intvector(const std::vector<Node>&row) {
     std::vector<int> r;
     std::transform(row.begin(), row.end(), std::back_inserter(r),
                    [](const Node &n) -> int { return n.head->col_id; });
+    return r;
+}
+
+std::vector<int> DLXMatrix::get_solution() {
+    std::vector<int> r;
+    std::transform(work.begin(), work.end(), std::back_inserter(r),
+                   [](Node *n) -> int { return n->row_id; });
     return r;
 }
 
@@ -81,6 +89,19 @@ void DLXMatrix::check_sizes() const {
     printf("]\n");
 }
 
+void DLXMatrix::print_solution(const std::vector<Node *> &solution) const {
+    std::cout << "Solution: (size = " << work.size() << ") : \n";
+    for (const Node *n : solution) {
+        std::cout << n->row_id << " ";
+        // std::cout << " " << n->row_id << " :";
+        // for (const Node &i : rows[n->row_id])
+        //     std::cout << " " << i.head->col_id;
+        // std::cout << "\n";
+    }
+    std::cout << "End" << std::endl;
+}
+
+
 int DLXMatrix::add_row(const std::vector<int> &r) {
     int row_id = rows.size();
     rows.push_back(std::vector<Node>(r.size()));
@@ -103,19 +124,6 @@ int DLXMatrix::add_row(const std::vector<int> &r) {
     for (size_t i = 1; i < r.size(); i++) row[i].left = &row[i-1];
     return row_id;
 }
-
-
-void DLXMatrix::print_solution(const std::vector<Node *> &solution) const {
-    std::cout << "Solution: (size = " << work.size() << ") : \n";
-    for (const Node *n : solution) {
-        std::cout << " " << n->row_id << " :";
-        for (const Node &i : rows[n->row_id])
-            std::cout << " " << i.head->col_id;
-        std::cout << "\n";
-    }
-    std::cout << "End" << std::endl;
-}
-
 
 
 void DLXMatrix::cover(Header *col) {
@@ -156,7 +164,6 @@ void DLXMatrix::unchoose(Node *row) {
 }
 
 
-
 DLXMatrix::Header *DLXMatrix::choose_min() {
     Header *choice = master()->right;
     int min_size = choice->size;
@@ -174,14 +181,17 @@ DLXMatrix::Header *DLXMatrix::choose_min() {
 // Knuth dancing links search algorithm
 // Recusive version
 ///////////////////////////////////////
-void DLXMatrix::search(int maxsol) {
+std::vector<std::vector<int>> DLXMatrix::search_rec(int maxsol) {
+    std::vector<std::vector<int>> res {};
     nb_solutions = nb_choices = nb_dances = 0;
-    search_rec(maxsol);
+    search_rec_internal(maxsol, res);
+    return res;
 }
-void DLXMatrix::search_rec(int maxsol) {
+void DLXMatrix::search_rec_internal(int maxsol,
+                                    std::vector<std::vector<int>> &res) {
     if (master()->right == master()) {
         nb_solutions++;
-        print_solution(work);
+        res.push_back(get_solution());
         return;
     }
 
@@ -191,12 +201,13 @@ void DLXMatrix::search_rec(int maxsol) {
     cover(choice);
     for (Node *row = choice->node.down; row != &choice->node; row = row->down) {
         choose(row);
-        search_rec(maxsol);
+        search_rec_internal(maxsol, res);
         unchoose(row);
         if (nb_solutions >= maxsol) break;
     }
     uncover(choice);
 }
+
 
 void DLXMatrix::reset() {
     while (not work.empty()) {
@@ -210,15 +221,14 @@ void DLXMatrix::reset() {
 // Knuth dancing links search algorithm
 // Iterative version
 ///////////////////////////////////////
-void DLXMatrix::search_iter() {
+bool DLXMatrix::search_iter() {
     nb_solutions = nb_choices = nb_dances = 0;
     do {
 	while (search_down) { // going down the recursion
 	    if (master()->right == master()) {
                 nb_solutions++;
-                print_solution(work);
                 search_down = false;
-                return;
+                return true;
 	    }
             Header *choice = choose_min();
             if (choice->size == 0) {
@@ -241,8 +251,26 @@ void DLXMatrix::search_iter() {
             else uncover(choice);
 	}
     } while (not work.empty());
+    return false;
+}
+bool DLXMatrix::search_iter(std::vector<int> &v) {
+    bool res;
+    if ((res = search_iter())) {
+        v = get_solution();
+    }
+    return res;
 }
 
+
+
+
+template <typename T>
+std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
+    out << '[';
+    for (auto i : v) std::cout << i << ", ";
+    out << "\b\b]";
+    return out;
+}
 
 int main() {
     DLXMatrix M(6);
@@ -260,22 +288,26 @@ int main() {
     M.check_sizes();
     const int maxsol = 3;
     std::cout << "Recursive ========================= \n";
-    M.search(maxsol);
+    for (auto &s : M.search_rec(maxsol))
+        std::cout << s << std::endl;
     std::cout << "Iterative ========================= \n";
     M.reset();
-    for (int i=0; i < 3; i++)
-        M.search_iter();
+    for (int i=0; i < 3; i++) {
+        M.search_iter(); std::cout << M.get_solution() << std::endl;
+    }
     std::cout << "Reset ========================= \n";
     M.reset();
-    M.search_iter();
-    M.search_iter();
+    M.search_iter(); std::cout << M.get_solution() << std::endl;
+    M.search_iter(); std::cout << M.get_solution() << std::endl;
     std::cout << "Copy ========================= \n";
     DLXMatrix N(M);
-    N.search_iter();
-    N.search_iter();
+    N.search_iter(); std::cout << N.get_solution() << std::endl;
+    N.search_iter(); std::cout << N.get_solution() << std::endl;
+    N.search_iter(); std::cout << N.get_solution() << std::endl;
     std::cout << "Assign ========================= \n";
     N = M;
-    N.search_iter();
-    N.search_iter();
+    N.search_iter(); std::cout << N.get_solution() << std::endl;
+    N.search_iter(); std::cout << N.get_solution() << std::endl;
+    N.search_iter(); std::cout << N.get_solution() << std::endl;
 }
 

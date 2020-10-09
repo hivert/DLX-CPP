@@ -32,11 +32,12 @@ public:
 
     int add_row(const std::vector<int>&);
 
-    void search(int);
-    void search_iter();
+    std::vector<std::vector<int>> search_rec(int);
+    bool search_iter();
+    bool search_iter(std::vector<int> &);
     void reset();
 
-    void print_solution(const std::vector<Node *> &) const;
+    std::vector<int> get_solution();
 
     DLXMatrix(const DLXMatrix &);
     DLXMatrix& operator=(DLXMatrix other);
@@ -55,9 +56,10 @@ protected:
     void uncover(Header *);
     void choose(Node *);
     void unchoose(Node *);
-    void search_rec(int);
+    void search_rec_internal(int, std::vector<std::vector<int>> &);
 
-    std::vector<int> row_to_intvector(const std::vector<Node>&) const;
+    static std::vector<int> row_to_intvector(const std::vector<Node>&);
+    void print_solution(const std::vector<Node *> &) const;
 
     std::vector<Header> heads;
     std::vector<std::vector<Node>> rows;
