@@ -1,15 +1,14 @@
 // Implementation of Knuth dancing links backtrack algorithm
 //////////////////////////////////////////////////////////////
-#include <utility>
-#include <cstdint>
 #include <array>
-#include <vector>
-#include <string>
-#include <stack>
+#include <cstdint>
 #include <iostream>
+#include <stack>
+#include <string>
+#include <utility>
+#include <vector>
 
 std::vector<int> inverse_perm(const std::vector<int> &perm);
-
 
 class DLXMatrix {
 
@@ -26,11 +25,10 @@ class DLXMatrix {
         Header *left, *right;
     };
 
-public:
-
+  public:
     DLXMatrix(int nb_col);
     DLXMatrix(const DLXMatrix &);
-    DLXMatrix& operator=(DLXMatrix other);
+    DLXMatrix &operator=(DLXMatrix other);
 
     size_t width() const { return heads.size() - 1; }
     size_t height() const { return rows.size(); }
@@ -38,7 +36,7 @@ public:
     void print_columns() const;
     void check_sizes() const;
 
-    int add_row(const std::vector<int>&);
+    int add_row(const std::vector<int> &);
 
     std::vector<std::vector<int>> search_rec(int);
     bool search_iter();
@@ -53,10 +51,9 @@ public:
     DLXMatrix permuted_columns(const std::vector<int> &);
     DLXMatrix permuted_rows(const std::vector<int> &);
 
-    friend std::ostream & operator<< (std::ostream &, const DLXMatrix &);
+    friend std::ostream &operator<<(std::ostream &, const DLXMatrix &);
 
-protected:
-
+  protected:
     DLXMatrix() = delete;
 
     Header *master() { return &heads[0]; }
@@ -69,9 +66,9 @@ protected:
     void unchoose(Node *);
     void search_rec_internal(int, std::vector<std::vector<int>> &);
 
-    static std::vector<int> row_to_intvector(const std::vector<Node>&);
-    std::vector<bool> row_to_boolvector_slow(const std::vector<Node>&) const;
-    std::vector<bool> row_to_boolvector(const std::vector<Node>&) const;
+    static std::vector<int> row_to_intvector(const std::vector<Node> &);
+    std::vector<bool> row_to_boolvector_slow(const std::vector<Node> &) const;
+    std::vector<bool> row_to_boolvector(const std::vector<Node> &) const;
     void print_solution(const std::vector<Node *> &) const;
 
     std::vector<Header> heads;
@@ -79,13 +76,13 @@ protected:
 
     std::vector<Node *> work;
     bool search_down;
-
 };
 
 template <typename T>
-std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
+std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
     out << '[';
-    for (auto i : v) std::cout << i << ", ";
+    for (auto i : v)
+        std::cout << i << ", ";
     out << "\b\b]";
     return out;
 }
