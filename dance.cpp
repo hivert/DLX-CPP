@@ -1,12 +1,31 @@
+//****************************************************************************//
+//       Copyright (C) 2020 Florent Hivert <Florent.Hivert@lri.fr>,           //
+//                                                                            //
+//    Distributed under the terms of the GNU General Public License (GPL)     //
+//                                                                            //
+//    This code is distributed in the hope that it will be useful,            //
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of          //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       //
+//   General Public License for more details.                                 //
+//                                                                            //
+//  The full text of the GPL is available at:                                 //
+//                                                                            //
+//                  http://www.gnu.org/licenses/                              //
+//****************************************************************************//
+
 // Implementation of Knuth dancing links backtrack algorithm
 //////////////////////////////////////////////////////////////
+#include "doctest/doctest.h"
+
 #include "dance.hpp"
 #include <algorithm>  // For sort, transform, random_shuffle
 #include <cassert>
-#include <cstring>
 #include <iostream>
 #include <numeric>  // For iota
 #include <stdexcept>
+#include <vector>
+
+
 
 std::vector<int> inverse_perm(const std::vector<int> &perm) {
     std::vector<int> inv(perm.size());
@@ -14,6 +33,18 @@ std::vector<int> inverse_perm(const std::vector<int> &perm) {
         inv[perm[i]] = i;
     return inv;
 }
+
+TEST_CASE("[dance]inverse_perm") {
+    CHECK(inverse_perm({}) == std::vector<int>{});
+    CHECK(inverse_perm({0}) == std::vector<int>{0});
+    CHECK(inverse_perm({0, 1}) == std::vector<int>{0, 1});
+    CHECK(inverse_perm({1, 0}) == std::vector<int>{1, 0});
+    CHECK(inverse_perm({1, 0, 3, 2}) == std::vector<int>{1, 0, 3, 2});
+    CHECK(inverse_perm({1, 3, 0, 2}) == std::vector<int>{2, 0, 3, 1});
+    CHECK(inverse_perm({6, 1, 5, 3, 7, 0, 4, 2}) ==
+          std::vector<int>{5, 1, 7, 3, 6, 2, 0, 4});
+}
+
 
 std::vector<int> DLXMatrix::row_to_intvector(const std::vector<Node> &row) {
     std::vector<int> r;
@@ -29,15 +60,23 @@ DLXMatrix::row_to_boolvector(const std::vector<Node> &row) const {
     std::vector<bool> res(width(), false);
     auto it = rowint.begin();
     size_t i = 0;
-    while (i < width() and it < rowint.end()) {
-        if (int(i) == *it) {
+    while (i < width() && it < rowint.end()) {
+        if (static_cast<int>(i) == *it) {
             res[i] = true;
-            *it++;
+            it++;
         }
         i++;
     }
     return res;
 }
+
+std::vector<int> DLXMatrix::int_row(size_t i) const {
+    return row_to_intvector(rows.at(i));
+}
+std::vector<bool> DLXMatrix::bool_row(size_t i) const  {
+    return row_to_boolvector(rows.at(i));
+}
+
 
 std::vector<int> DLXMatrix::get_solution() {
     std::vector<int> r;
@@ -101,8 +140,7 @@ void DLXMatrix::check_sizes() const {
     std::cout << "sizes: [ ";
     for (Header *h = master()->right; h != master(); h = h->right) {
         int irows = 0;
-        for (Node *p = h->node.down; p != &h->node; irows++, p = p->down)
-            /* Nothing */;
+        for (Node *p = h->node.down; p != &h->node; irows++, p = p->down) {}
         if (h->size != irows)
             throw std::logic_error("wrong size of column");
         std::cout << h->col_id << "(" << irows << ") ";
@@ -228,7 +266,7 @@ void DLXMatrix::search_rec_internal(int maxsol,
 }
 
 void DLXMatrix::reset() {
-    while (not work.empty()) {
+    while (!work.empty()) {
         Node *row = work.back();
         unchoose(row);
         uncover(row->head);
@@ -257,8 +295,7 @@ bool DLXMatrix::search_iter() {
             cover(choice);
             choose(choice->node.down);
         }
-        while (not search_down and
-               not work.empty()) {  // going up the recursion
+        while (!search_down && !work.empty()) {  // going up the recursion
             Node *row = work.back();
             Header *choice = row->head;
             unchoose(row);
@@ -266,10 +303,11 @@ bool DLXMatrix::search_iter() {
             if (row != &choice->node) {
                 choose(row);
                 search_down = true;
-            } else
+            } else {
                 uncover(choice);
+            }
         }
-    } while (not work.empty());
+    } while (!work.empty());
     return false;
 }
 bool DLXMatrix::search_iter(std::vector<int> &v) {
@@ -279,21 +317,22 @@ bool DLXMatrix::search_iter(std::vector<int> &v) {
     return res;
 }
 
-DLXMatrix DLXMatrix::permuted_columns(const std::vector<int> &perm) {
+DLXMatrix DLXMatrix::permuted_inv_columns(const std::vector<int> &perm) {
     assert(perm.size() == width());
-    std::vector<int> inv = inverse_perm(perm);
 
     DLXMatrix res(width());
     for (auto &row : rows) {
         std::vector<int> r;
         std::transform(
             row.begin(), row.end(), std::back_inserter(r),
-            [inv](const Node &n) -> int { return inv[n.head->col_id]; });
+            [&perm](const Node &n) -> int { return perm[n.head->col_id]; });
         res.add_row(r);
     }
     return res;
 }
-
+DLXMatrix DLXMatrix::permuted_columns(const std::vector<int> &perm) {
+    return permuted_inv_columns(inverse_perm(perm));
+}
 DLXMatrix DLXMatrix::permuted_rows(const std::vector<int> &perm) {
     assert(perm.size() == height());
 

@@ -1,17 +1,29 @@
+//****************************************************************************//
+//       Copyright (C) 2020 Florent Hivert <Florent.Hivert@lri.fr>,           //
+//                                                                            //
+//    Distributed under the terms of the GNU General Public License (GPL)     //
+//                                                                            //
+//    This code is distributed in the hope that it will be useful,            //
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of          //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       //
+//   General Public License for more details.                                 //
+//                                                                            //
+//  The full text of the GPL is available at:                                 //
+//                                                                            //
+//                  http://www.gnu.org/licenses/                              //
+//****************************************************************************//
+
 // Implementation of Knuth dancing links backtrack algorithm
 //////////////////////////////////////////////////////////////
-#include <array>
-#include <cstdint>
+#ifndef DANCE_HPP_
+#define DANCE_HPP_
+
 #include <iostream>
-#include <stack>
-#include <string>
-#include <utility>
 #include <vector>
 
 std::vector<int> inverse_perm(const std::vector<int> &perm);
 
 class DLXMatrix {
-
     struct Header;
     struct Node {
         int row_id;
@@ -26,7 +38,7 @@ class DLXMatrix {
     };
 
   public:
-    DLXMatrix(int nb_col);
+    explicit DLXMatrix(int nb_col);
     DLXMatrix(const DLXMatrix &);
     DLXMatrix &operator=(DLXMatrix other);
 
@@ -36,9 +48,11 @@ class DLXMatrix {
     void print_columns() const;
     void check_sizes() const;
 
-    int add_row(const std::vector<int> &);
+    int add_row(const std::vector<int> &row);
+    std::vector<int> int_row(size_t i) const ;
+    std::vector<bool> bool_row(size_t i) const;
 
-    std::vector<std::vector<int>> search_rec(int);
+    std::vector<std::vector<int>> search_rec(int max_sol);
     bool search_iter();
     bool search_iter(std::vector<int> &);
     std::vector<int> get_solution();
@@ -48,8 +62,9 @@ class DLXMatrix {
 
     int nb_solutions, nb_choices, nb_dances;
 
-    DLXMatrix permuted_columns(const std::vector<int> &);
-    DLXMatrix permuted_rows(const std::vector<int> &);
+    DLXMatrix permuted_columns(const std::vector<int> &perm);
+    DLXMatrix permuted_inv_columns(const std::vector<int> &inv);
+    DLXMatrix permuted_rows(const std::vector<int> &perm);
 
     friend std::ostream &operator<<(std::ostream &, const DLXMatrix &);
 
@@ -60,10 +75,10 @@ class DLXMatrix {
     const Header *master() const { return &heads[0]; }
 
     Header *choose_min();
-    void cover(Header *);
-    void uncover(Header *);
-    void choose(Node *);
-    void unchoose(Node *);
+    void cover(Header *h);
+    void uncover(Header *h);
+    void choose(Node *n);
+    void unchoose(Node *n);
     void search_rec_internal(int, std::vector<std::vector<int>> &);
 
     static std::vector<int> row_to_intvector(const std::vector<Node> &);
@@ -86,3 +101,5 @@ std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
     out << "\b\b]";
     return out;
 }
+
+#endif  // DANCE_HPP_
