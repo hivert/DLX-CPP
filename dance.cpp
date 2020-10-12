@@ -3,24 +3,38 @@
 #include <cstring>
 #include <iostream>
 #include <algorithm>
+#include <cassert>
+#include <stdexcept>
 #include "dance.hpp"
-
-
-__attribute__((noreturn)) void fatal(const char *msg) {
-    std::cerr << "\nFatal error: " << msg << std::endl;
-    exit(EXIT_FAILURE);
-}
 
 
 std::vector<int> DLXMatrix::row_to_intvector(const std::vector<Node>&row) {
     std::vector<int> r;
+    r.reserve(row.size());
     std::transform(row.begin(), row.end(), std::back_inserter(r),
                    [](const Node &n) -> int { return n.head->col_id; });
     return r;
 }
+std::vector<bool>
+DLXMatrix::row_to_boolvector(const std::vector<Node>&row) const {
+    auto rowint = DLXMatrix::row_to_intvector(row);
+    std::sort(rowint.begin(), rowint.end());
+    std::vector<bool> res(width(), false);
+    auto it = rowint.begin();
+    size_t i = 0;
+    while (i < width() and it < rowint.end()) {
+        if (int(i) == *it) {
+            res[i] = true;
+            *it++;
+        }
+        i++;
+    }
+    return res;
+}
 
 std::vector<int> DLXMatrix::get_solution() {
     std::vector<int> r;
+    r.reserve(work.size());
     std::transform(work.begin(), work.end(), std::back_inserter(r),
                    [](Node *n) -> int { return n->row_id; });
     return r;
@@ -43,11 +57,10 @@ DLXMatrix::DLXMatrix(int nb_col) : heads(nb_col+1) {
     search_down = true;
 }
 
-DLXMatrix::DLXMatrix(const DLXMatrix &other)
-    : DLXMatrix(other.heads.size()-1) {
+DLXMatrix::DLXMatrix(const DLXMatrix &other) : DLXMatrix(other.width()) {
     for (auto &row : other.rows) add_row(row_to_intvector(row));
     for (Node *n : other.work) {
-        Node *nd = &(rows[n->row_id][0]) + (n - &(other.rows[n->row_id][0]));
+        Node *nd = rows[n->row_id].data() + (n - other.rows[n->row_id].data());
         cover(nd->head);
         choose(nd);
     }
@@ -83,10 +96,10 @@ void DLXMatrix::check_sizes() const {
         for (Node *p = h->node.down; p != &h->node; irows++, p = p->down)
             /* Nothing */;
         if (h->size != irows)
-            fatal("wrong size of column");
+            throw std::logic_error("wrong size of column");
         std::cout << h->col_id << "(" << irows << ") ";
     }
-    printf("]\n");
+    std::cout << "]\n";
 }
 
 void DLXMatrix::print_solution(const std::vector<Node *> &solution) const {
@@ -108,15 +121,13 @@ int DLXMatrix::add_row(const std::vector<int> &r) {
     std::vector<Node> & row = rows.back();
 
     for (size_t i = 0; i < r.size(); i++) {
-        unsigned int icol = r[i]+1;
-        if (not (0 < icol and icol < heads.size()))
-            fatal("No such column !");
+        auto &h = heads.at(r[i]+1);
         row[i].row_id = row_id;
-        row[i].head = &heads[icol];
-        heads[icol].size++;
-        row[i].down = &heads[icol].node;
-        row[i].up = heads[icol].node.up;
-        row[i].up->down = heads[icol].node.up = &row[i];
+        row[i].head = &h;
+        h.size++;
+        row[i].down = &h.node;
+        row[i].up = h.node.up;
+        row[i].up->down = h.node.up = &row[i];
     }
     row.back().right = &row[0];
     for (size_t i = 0; i < r.size()-1; i++) row[i].right = &row[i+1];
@@ -262,52 +273,32 @@ bool DLXMatrix::search_iter(std::vector<int> &v) {
 }
 
 
+DLXMatrix DLXMatrix::permuted_columns(const std::vector<int> &perm) {
+    assert(perm.size() == width());
+    std::vector<int> inv(perm.size());
+    for (size_t i=0; i < perm.size(); i++) inv[perm[i]] = i;
 
+    DLXMatrix res(width());
+    for (auto &row : rows) {
+        std::vector<int> r;
+        std::transform(row.begin(), row.end(), std::back_inserter(r),
+                       [inv](const Node &n) -> int {
+                           return inv[n.head->col_id];
+                       });
+        res.add_row(r);
+    }
+    return res;
+}
 
-template <typename T>
-std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
-    out << '[';
-    for (auto i : v) std::cout << i << ", ";
-    out << "\b\b]";
+DLXMatrix DLXMatrix::permuted_rows(const std::vector<int> &perm) {
+    assert(perm.size() == height());
+
+    DLXMatrix res(width());
+    for (int i : perm) res.add_row(row_to_intvector(rows[i]));
+    return res;
+}
+
+std::ostream& operator<< (std::ostream& out, const DLXMatrix& M) {
+    for (auto &row : M.rows) out << M.row_to_boolvector(row) << "\n";
     return out;
 }
-
-int main() {
-    DLXMatrix M(6);
-
-    M.add_row({0,2});
-    M.add_row({0,1});
-    M.add_row({1,4});
-    M.add_row({3});
-    M.add_row({3,4});
-    M.add_row({5});
-    M.add_row({1});
-    M.add_row({0,1,2});
-    M.add_row({2,3,4});
-    M.add_row({1,4,5});
-    M.check_sizes();
-    const int maxsol = 3;
-    std::cout << "Recursive ========================= \n";
-    for (auto &s : M.search_rec(maxsol))
-        std::cout << s << std::endl;
-    std::cout << "Iterative ========================= \n";
-    M.reset();
-    for (int i=0; i < 3; i++) {
-        M.search_iter(); std::cout << M.get_solution() << std::endl;
-    }
-    std::cout << "Reset ========================= \n";
-    M.reset();
-    M.search_iter(); std::cout << M.get_solution() << std::endl;
-    M.search_iter(); std::cout << M.get_solution() << std::endl;
-    std::cout << "Copy ========================= \n";
-    DLXMatrix N(M);
-    N.search_iter(); std::cout << N.get_solution() << std::endl;
-    N.search_iter(); std::cout << N.get_solution() << std::endl;
-    N.search_iter(); std::cout << N.get_solution() << std::endl;
-    std::cout << "Assign ========================= \n";
-    N = M;
-    N.search_iter(); std::cout << N.get_solution() << std::endl;
-    N.search_iter(); std::cout << N.get_solution() << std::endl;
-    N.search_iter(); std::cout << N.get_solution() << std::endl;
-}
-

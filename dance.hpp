@@ -6,7 +6,7 @@
 #include <vector>
 #include <string>
 #include <stack>
-
+#include <iostream>
 
 class DLXMatrix {
 
@@ -26,6 +26,11 @@ class DLXMatrix {
 public:
 
     DLXMatrix(int nb_col);
+    DLXMatrix(const DLXMatrix &);
+    DLXMatrix& operator=(DLXMatrix other);
+
+    size_t width() const { return heads.size() - 1; }
+    size_t height() const { return rows.size(); }
 
     void print_columns() const;
     void check_sizes() const;
@@ -35,14 +40,16 @@ public:
     std::vector<std::vector<int>> search_rec(int);
     bool search_iter();
     bool search_iter(std::vector<int> &);
-    void reset();
-
     std::vector<int> get_solution();
 
-    DLXMatrix(const DLXMatrix &);
-    DLXMatrix& operator=(DLXMatrix other);
+    void reset();
 
     int nb_solutions, nb_choices, nb_dances;
+
+    DLXMatrix permuted_columns(const std::vector<int> &);
+    DLXMatrix permuted_rows(const std::vector<int> &);
+
+    friend std::ostream & operator<< (std::ostream &, const DLXMatrix &);
 
 protected:
 
@@ -59,6 +66,8 @@ protected:
     void search_rec_internal(int, std::vector<std::vector<int>> &);
 
     static std::vector<int> row_to_intvector(const std::vector<Node>&);
+    std::vector<bool> row_to_boolvector_slow(const std::vector<Node>&) const;
+    std::vector<bool> row_to_boolvector(const std::vector<Node>&) const;
     void print_solution(const std::vector<Node *> &) const;
 
     std::vector<Header> heads;
@@ -68,3 +77,11 @@ protected:
     bool search_down;
 
 };
+
+template <typename T>
+std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
+    out << '[';
+    for (auto i : v) std::cout << i << ", ";
+    out << "\b\b]";
+    return out;
+}
