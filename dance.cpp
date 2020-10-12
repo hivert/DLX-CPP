@@ -2,10 +2,17 @@
 //////////////////////////////////////////////////////////////
 #include <cstring>
 #include <iostream>
-#include <algorithm>
 #include <cassert>
 #include <stdexcept>
+#include <algorithm>  // For sort, transform, random_shuffle
+#include <numeric>    // For iota
 #include "dance.hpp"
+
+std::vector<int> inverse_perm(const std::vector<int> &perm) {
+    std::vector<int> inv(perm.size());
+    for (size_t i=0; i < perm.size(); i++) inv[perm[i]] = i;
+    return inv;
+}
 
 
 std::vector<int> DLXMatrix::row_to_intvector(const std::vector<Node>&row) {
@@ -266,17 +273,14 @@ bool DLXMatrix::search_iter() {
 }
 bool DLXMatrix::search_iter(std::vector<int> &v) {
     bool res;
-    if ((res = search_iter())) {
-        v = get_solution();
-    }
+    if ((res = search_iter())) v = get_solution();
     return res;
 }
 
 
 DLXMatrix DLXMatrix::permuted_columns(const std::vector<int> &perm) {
     assert(perm.size() == width());
-    std::vector<int> inv(perm.size());
-    for (size_t i=0; i < perm.size(); i++) inv[perm[i]] = i;
+    std::vector<int> inv = inverse_perm(perm);
 
     DLXMatrix res(width());
     for (auto &row : rows) {
@@ -297,6 +301,28 @@ DLXMatrix DLXMatrix::permuted_rows(const std::vector<int> &perm) {
     for (int i : perm) res.add_row(row_to_intvector(rows[i]));
     return res;
 }
+
+bool DLXMatrix::search_random(std::vector<int> &sol) {
+    std::vector<int> row_perm(height());
+    std::iota(row_perm.begin(), row_perm.end(), 0);
+    std::random_shuffle(row_perm.begin(), row_perm.end());
+
+    std::vector<int> col_perm(width());
+    std::iota(col_perm.begin(), col_perm.end(), 0);
+    std::random_shuffle(col_perm.begin(), col_perm.end());
+
+    DLXMatrix M = permuted_columns(col_perm).permuted_rows(row_perm);
+    bool res;
+    if ((res = M.search_iter())) {
+        std::vector<int> v = M.get_solution();
+        sol.resize(v.size());
+        for (size_t i = 0; i < v.size(); i++) {
+            sol[i] = row_perm[v[i]];
+        }
+    }
+    return res;
+}
+
 
 std::ostream& operator<< (std::ostream& out, const DLXMatrix& M) {
     for (auto &row : M.rows) out << M.row_to_boolvector(row) << "\n";

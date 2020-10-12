@@ -2,13 +2,16 @@
 //////////////////////////////////////////////////////////////
 #include <cstring>
 #include <iostream>
-#include <algorithm>
 #include <cassert>
+#include <ctime>      // For time
+#include <algorithm>  // For shuffle
 #include "dance.hpp"
 
 
 
 int main() {
+    std::srand ( unsigned ( std::time(0) ) );
+
     DLXMatrix M(6);
     std::vector<int> vctr{3,2,1,4,0}, vctc{3,2,1,4,5,0};
 
@@ -46,9 +49,15 @@ int main() {
     N.search_iter(); std::cout << N.get_solution() << std::endl;
     N.search_iter(); std::cout << N.get_solution() << std::endl;
     std::cout << "Assign ========================= \n";
+
+
     N = M;
-    N.search_iter(); std::cout << N.get_solution() << std::endl;
-    N.search_iter(); std::cout << N.get_solution() << std::endl;
-    N.search_iter(); std::cout << N.get_solution() << std::endl;
+    N.reset();
+    std::vector<int> sol;
+    while (N.search_iter(sol)) std::cout << sol << std::endl;
+
+    std::cout << "Random ========================= \n";
+    std::vector<int> rand;
+    std::cout << N.search_random(rand) << " " << rand << std::endl;
 }
 

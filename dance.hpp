@@ -8,6 +8,9 @@
 #include <stack>
 #include <iostream>
 
+std::vector<int> inverse_perm(const std::vector<int> &perm);
+
+
 class DLXMatrix {
 
     struct Header;
@@ -41,6 +44,7 @@ public:
     bool search_iter();
     bool search_iter(std::vector<int> &);
     std::vector<int> get_solution();
+    bool search_random(std::vector<int> &);
 
     void reset();
 
