@@ -234,7 +234,7 @@ int main(void) {
     auto endprint = cron::high_resolution_clock::now();
     std::cout << "Number of choices: " << M.nb_choices
               << ", Number of dances: " << M.nb_dances << "\n";
-    std::cout << std::setprecision(4) << "Timings: parse = "
+    std::cout << std::fixed << std::setprecision(1) << "Timings: parse = "
               << cron::duration<float, std::micro>(tencode-tstart).count()
               << "μs, solve = "
               << cron::duration<float, std::micro>(endcompute - tencode).count()
