@@ -156,17 +156,18 @@ int main(void) {
         for (int c = 0; c < sq_size; c++) {
             char ch = std::cin.peek();
             while (ch == ' ' or ch == '\n') {
-                std::cin.get();
+                std::cin.ignore();
                 ch = std::cin.peek();
             }
             matrix[r][c] = 0;
             if (ch == '.') {
-                std::cin.get();
+                std::cin.ignore();
             } else {
                 matrix[r][c] = 0;
                 std::cin >> matrix[r][c];
                 if (matrix[r][c] == 0) {
-                    std::cerr << "Bad character <" << ch << ">" << std::endl;
+                    std::cerr << "Bad character <" << std::cin.peek()
+                              << ">" << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 else {
