@@ -236,8 +236,8 @@ DLXMatrix::Header *DLXMatrix::choose_min() {
 // Knuth dancing links search algorithm
 // Recusive version
 ///////////////////////////////////////
-std::vector<std::vector<int>> DLXMatrix::search_rec(int maxsol) {
-    std::vector<std::vector<int>> res{};
+std::vector<std::vector<int> > DLXMatrix::search_rec(int maxsol) {
+    std::vector<std::vector<int> > res{};
     nb_solutions = nb_choices = nb_dances = 0;
     search_rec_internal(maxsol, res);
     return res;

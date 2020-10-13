@@ -87,7 +87,7 @@ class DLXMatrix {
     void print_solution(const std::vector<Node *> &) const;
 
     std::vector<Header> heads;
-    std::vector<std::vector<Node>> rows;
+    std::vector<std::vector<Node> > rows;
 
     std::vector<Node *> work;
     bool search_down;
