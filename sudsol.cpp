@@ -33,7 +33,7 @@
 
 int row_size, col_size, sq_size;
 std::vector<std::string> col_names;
-std::vector<std::tuple<int, int, int>> row_names;
+std::vector<std::tuple<int, int, int>> row_codes;
 std::unordered_map<std::string, size_t> col_ranks;
 
 
@@ -167,7 +167,7 @@ int main(void) {
         for (int c = 1; c <= sq_size; c++)
             for (int n = 1; n <= sq_size; n++) {
                 M.add_row(row_case_occ(r, c, n, sq_size, block));
-                row_names.push_back({r, c, n});
+                row_codes.push_back({r, c, n});
             }
 
     n_hint =0;
@@ -177,20 +177,23 @@ int main(void) {
                 auto row = row_case_occ(r, c, matrix[r-1][c-1], sq_size, block);
                 row.push_back(col_ranks[hint_name(n_hint)]);
                 M.add_row(row);
-                row_names.push_back({r, c, matrix[r-1][c-1]});
+                row_codes.push_back({r, c, matrix[r-1][c-1]});
                 n_hint++;
             }
     auto res = M.search_rec(2);
     assert(res.size() == 1);
     int solution[sq_size][sq_size];
     for (int rind : res[0]) {
-        auto [r, c, n] = row_names[rind];
-//        std::cout << r << " " << c << " " << n << std::endl;
+        auto [r, c, n] = row_codes[rind];
         solution[r-1][c-1] = n;
     }
     for (int i = 0; i < sq_size; i++) {
-        for (int j = 0; j < sq_size; j++)
+        if ((row_size != 0) && !(i % row_size)) std::cout << "\n";
+        std::cout << "  ";
+        for (int j = 0; j < sq_size; j++) {
+            if ((col_size != 0) && !(j % col_size)) std::cout << " ";
             std::cout << solution[i][j] << " ";
+        }
         std::cout << "\n";
     }
 
