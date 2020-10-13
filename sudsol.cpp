@@ -70,11 +70,14 @@ namespace std {
     };
 }
 
+namespace cron = std::chrono;
 
 using col_type = std::tuple<char, int, int>;
 using SQMatrix = std::vector<std::vector<int> >;
 
-int row_size, col_size, sq_size;
+SQMatrix blocks, matrix;
+
+int row_size, col_size, sq_size, nb_hint;
 std::vector<col_type> col_names;
 std::vector<std::tuple<int, int, int> > row_codes;
 std::unordered_map<col_type, size_t> col_ranks;
@@ -109,13 +112,12 @@ void cout_mat(SQMatrix &m) {
 }
 
 
-int main(void) {
+void read_sudoku(std::istream& in) {
     char type, unused;
-    auto tstart = std::chrono::high_resolution_clock::now();
-    std::cin >> type;
+    in >> type;
     switch (type) {
     case 's' :
-        std::cin >> col_size >> unused >> row_size;
+        in >> col_size >> unused >> row_size;
         assert (unused == 'x');
 	sq_size = col_size*row_size;
         std::cout << "Standard sudoku (block size = "
@@ -124,7 +126,7 @@ int main(void) {
         break;
 
     case 'g' :
-        std::cin >> sq_size;
+        in >> sq_size;
  	std::cout << "Generalized sudoku "
                   << sq_size << "x" << sq_size << "\n";
         break;
@@ -136,8 +138,8 @@ int main(void) {
 
     // Dynamic allocation of the matrices.
     const std::vector<int> empty_row(sq_size);
-    SQMatrix blocks(sq_size, empty_row);
-    SQMatrix matrix(sq_size, empty_row);
+    blocks.resize(sq_size, empty_row);
+    matrix.resize(sq_size, empty_row);
 
     if (type=='s') {  // Standard block structure
         for (int r = 0; r < sq_size; r++)
@@ -146,37 +148,52 @@ int main(void) {
     } else {  // Generalized block structure
         for (int r = 0; r < sq_size; r++)
             for (int c = 0; c < sq_size; c++)
-                std::cin >> blocks[r][c];
+                in >> blocks[r][c];
     }
 
     // Hint of the problem statement
-    int n_hint = 0;
+    nb_hint = 0;
     for (int r = 0; r < sq_size; r++) {
         for (int c = 0; c < sq_size; c++) {
-            char ch = std::cin.peek();
+            char ch = in.peek();
             while (ch == ' ' or ch == '\n') {
-                std::cin.ignore();
-                ch = std::cin.peek();
+                in.ignore();
+                ch = in.peek();
             }
             matrix[r][c] = 0;
             if (ch == '.') {
-                std::cin.ignore();
+                in.ignore();
             } else {
                 matrix[r][c] = 0;
-                std::cin >> matrix[r][c];
+                in >> matrix[r][c];
                 if (matrix[r][c] == 0) {
-                    std::cerr << "Bad character <" << std::cin.peek()
+                    std::cerr << "Bad character <" << in.peek()
                               << ">" << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 else {
-                    n_hint++;
+                    nb_hint++;
                 }
             }
         }
     }
+}
 
-    cout_mat(matrix);
+
+int main(int argc, char* argv[]) {
+
+    auto tstart = cron::high_resolution_clock::now();
+    if ( argc > 1 ) {
+        std::ifstream ifile(argv[1]);
+        if ( ifile ) {
+            read_sudoku(ifile);
+        } else {
+            std::cerr << "File not found : " << argv[1] << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    } else {
+      read_sudoku(std::cin);
+    }
 
     auto tencode = std::chrono::high_resolution_clock::now();
     for (int i = 1; i <= sq_size; i++)
@@ -191,12 +208,12 @@ int main(void) {
     for (int i = 1; i <= sq_size; i++)
         for (int j = 1; j <= sq_size; j++)
             new_col({'c', i, j});  // Col i occupied by j
-    for (int i = 0; i < n_hint; i++)
+    for (int i = 0; i < nb_hint; i++)
         new_col({'e', i, 0});
 
     DLXMatrix M(col_names.size());
 
-    // Rule of the Sudoku game
+    // Rules of the Sudoku game
     for (int r = 1; r <= sq_size; r++) {
         for (int c = 1; c <= sq_size; c++) {
             for (int n = 1; n <= sq_size; n++) {
@@ -205,28 +222,30 @@ int main(void) {
             }
         }
     }
-    n_hint =0;
+    nb_hint = 0;
     for (int r = 1; r <= sq_size; r++) {
         for (int c = 1; c <= sq_size; c++) {
             if (matrix[r-1][c-1] != 0) {
                 auto row = row_case_occ(r, c, matrix[r-1][c-1], blocks);
-                row.push_back(col_ranks[{'e', n_hint, 0}]);
+                row.push_back(col_ranks[{'e', nb_hint, 0}]);
                 M.add_row(row);
                 row_codes.push_back({r, c, matrix[r-1][c-1]});
-                n_hint++;
+                nb_hint++;
             }
         }
     }
+
+    auto tcompute = std::chrono::high_resolution_clock::now();
+
     auto res = M.search_rec(2);
     assert(res.size() == 1);
-    SQMatrix solution(sq_size, empty_row);
+    SQMatrix solution(sq_size, std::vector<int>(sq_size));
 
     for (int rind : res[0]) {
         auto [r, c, n] = row_codes[rind];
         solution[r-1][c-1] = n;
     }
 
-    namespace cron = std::chrono;
     auto endcompute = cron::high_resolution_clock::now();
     std::cout << std::endl;
     cout_mat(solution);
@@ -234,13 +253,15 @@ int main(void) {
     auto endprint = cron::high_resolution_clock::now();
     std::cout << "Number of choices: " << M.nb_choices
               << ", Number of dances: " << M.nb_dances << "\n";
-    std::cout << std::fixed << std::setprecision(1) << "Timings: parse = "
+    std::cout << std::fixed << std::setprecision(0) << "Timings: parse = "
               << cron::duration<float, std::micro>(tencode-tstart).count()
+              << "μs, encode = "
+              << cron::duration<float, std::micro>(tcompute - tencode).count()
               << "μs, solve = "
-              << cron::duration<float, std::micro>(endcompute - tencode).count()
+              << cron::duration<float, std::micro>(endcompute - tcompute).count()
               << "μs, output = "
               << cron::duration<float, std::micro>(endprint - endcompute).count()
-              << "μs, total = "
+              << "μs\nTotal = "
               << cron::duration<float, std::micro>(endprint - tstart).count()
               << "μs\n";
 }
