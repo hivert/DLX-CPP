@@ -21,11 +21,13 @@
 
 #include <cstring>
 #include <iostream>
+#include <iomanip>
 #include <cassert>
 #include <ctime>          // time
 #include <vector>
 #include <tuple>
 #include <unordered_map>
+#include <chrono>
 #include "dance.hpp"
 
 
@@ -37,7 +39,6 @@ namespace std {
         //     and handles duplicates.
         // See Mike Seymour in magic-numbers-in-boosthash-combine:
         //     https://stackoverflow.com/questions/4948780
-
         template <class T>
         inline void hash_combine(std::size_t &seed, T const &v) {
             seed ^= hash<T>()(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
@@ -110,23 +111,21 @@ void cout_mat(SQMatrix &m) {
 
 int main(void) {
     char type, unused;
-
+    auto tstart = std::chrono::high_resolution_clock::now();
     std::cin >> type;
     switch (type) {
     case 's' :
         std::cin >> col_size >> unused >> row_size;
         assert (unused == 'x');
 	sq_size = col_size*row_size;
-        std::cout << "%S s" << col_size << "x" << row_size << "\n";
-        std::cout << "%C Standard sudoku (block size = "
+        std::cout << "Standard sudoku (block size = "
                   << col_size << "x" << row_size
                   << ", square size = " << sq_size << ")\n";
         break;
 
     case 'g' :
         std::cin >> sq_size;
-        std::cout << "%S g" << sq_size << "\n";
- 	std::cout << "%C Generalized sudoku "
+ 	std::cout << "Generalized sudoku "
                   << sq_size << "x" << sq_size << "\n";
         break;
 
@@ -179,6 +178,7 @@ int main(void) {
 
     cout_mat(matrix);
 
+    auto tencode = std::chrono::high_resolution_clock::now();
     for (int i = 1; i <= sq_size; i++)
         for (int j = 1; j <= sq_size; j++)
             new_col({'s', i, j});  // Square i,j occupied
@@ -219,13 +219,28 @@ int main(void) {
     }
     auto res = M.search_rec(2);
     assert(res.size() == 1);
-
     SQMatrix solution(sq_size, empty_row);
 
     for (int rind : res[0]) {
         auto [r, c, n] = row_codes[rind];
         solution[r-1][c-1] = n;
     }
+
+    namespace cron = std::chrono;
+    auto endcompute = cron::high_resolution_clock::now();
     std::cout << std::endl;
     cout_mat(solution);
+    std::cout << std::endl;
+    auto endprint = cron::high_resolution_clock::now();
+    std::cout << "Number of choices: " << M.nb_choices
+              << ", Number of dances: " << M.nb_dances << "\n";
+    std::cout << std::setprecision(4) << "Timings: parse = "
+              << cron::duration<float, std::micro>(tencode-tstart).count()
+              << "μs, solve = "
+              << cron::duration<float, std::micro>(endcompute - tencode).count()
+              << "μs, output = "
+              << cron::duration<float, std::micro>(endprint - endcompute).count()
+              << "μs, total = "
+              << cron::duration<float, std::micro>(endprint - tstart).count()
+              << "μs\n";
 }
