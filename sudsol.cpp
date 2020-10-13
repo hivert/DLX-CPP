@@ -21,7 +21,6 @@
 
 #include <cstring>
 #include <iostream>
-#include <sstream>        // std::ostringstream
 #include <cassert>
 #include <ctime>          // time
 #include <vector>
@@ -30,40 +29,70 @@
 #include "dance.hpp"
 
 
+namespace std {
+    namespace {
 
-int row_size, col_size, sq_size;
-std::vector<std::string> col_names;
-std::vector<std::tuple<int, int, int>> row_codes;
-std::unordered_map<std::string, size_t> col_ranks;
+        // Code from boost
+        // Reciprocal of the golden ratio helps spread entropy
+        //     and handles duplicates.
+        // See Mike Seymour in magic-numbers-in-boosthash-combine:
+        //     https://stackoverflow.com/questions/4948780
 
+        template <class T>
+        inline void hash_combine(std::size_t& seed, T const& v) {
+            seed ^= hash<T>()(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+        }
 
-void new_col(std::string name) {
-    col_ranks.insert(std::make_pair(name, col_names.size()));
-    col_names.push_back(name);
+        // Recursive template code derived from Matthieu M.
+        template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
+        struct HashValueImpl {
+            static void apply(size_t& seed, Tuple const& tuple) {
+                HashValueImpl<Tuple, Index-1>::apply(seed, tuple);
+                hash_combine(seed, get<Index>(tuple));
+            }
+        };
+
+        template <class Tuple>
+        struct HashValueImpl<Tuple,0> {
+            static void apply(size_t& seed, Tuple const& tuple) {
+                hash_combine(seed, get<0>(tuple));
+            }
+        };
+    }
+
+    template <typename ... TT>
+    struct hash<std::tuple<TT...>> {
+        size_t operator()(std::tuple<TT...> const& tt) const {
+            size_t seed = 0;
+            HashValueImpl<std::tuple<TT...> >::apply(seed, tt);
+            return seed;
+        }
+    };
 }
 
-std::string col_name(char h, int i, int j) {
-    std::ostringstream col_name;
-    col_name << h << "_" << i << "_" << j;
-    return col_name.str();
+
+using col_type = std::tuple<char, int, int>;
+int row_size, col_size, sq_size;
+std::vector<col_type> col_names;
+std::vector<std::tuple<int, int, int>> row_codes;
+std::unordered_map<col_type, size_t> col_ranks;
+
+void new_col(col_type name) {
+    col_ranks.insert(std::make_pair(name, col_names.size()));
+    col_names.push_back(name);
 }
 
 std::vector<int> row_case_occ(
     int row, int col, int number, int sq_size, void *bl) {
     int (*block)[sq_size] = static_cast<int (*)[sq_size]>(bl);
     std::vector<int> res;
-    res.push_back(col_ranks[col_name('r', row, number)]);
-    res.push_back(col_ranks[col_name('c', col, number)]);
-    res.push_back(col_ranks[col_name('s', row, col)]);
-    res.push_back(col_ranks[col_name('b', block[row-1][col-1], number)]);
+    res.push_back(col_ranks[{'r', row, number}]);
+    res.push_back(col_ranks[{'c', col, number}]);
+    res.push_back(col_ranks[{'s', row, col}]);
+    res.push_back(col_ranks[{'b', block[row-1][col-1], number}]);
     return res;
 }
 
-std::string hint_name(int i) {
-    std::ostringstream col_name;
-    col_name << "en_" << std::setfill('0') << std::setw(3) << i;
-    return col_name.str();
-}
 
 int main(void) {
     char type, unused;
@@ -143,18 +172,18 @@ int main(void) {
 
     for (int i = 1; i <= sq_size; i++)
         for (int j = 1; j <= sq_size; j++)
-            new_col(col_name('s', i, j));  // Square i,j occupied
+            new_col({'s', i, j});  // Square i,j occupied
     for (int i = 1; i <= sq_size; i++)
         for (int j = 1; j <= sq_size; j++)
-            new_col(col_name('b', i, j));  // Block i occupied by j
+            new_col({'b', i, j});  // Block i occupied by j
     for (int i = 1; i <= sq_size; i++)
         for (int j = 1; j <= sq_size; j++)
-            new_col(col_name('r', i, j));  // Row i occupied by j
+            new_col({'r', i, j});  // Row i occupied by j
     for (int i = 1; i <= sq_size; i++)
         for (int j = 1; j <= sq_size; j++)
-            new_col(col_name('c', i, j));  // Col i occupied by j
+            new_col({'c', i, j});  // Col i occupied by j
     for (int i = 0; i < n_hint; i++)
-        new_col(hint_name(i));
+        new_col({'e', i, 0});
 
     // for (auto s : col_names) std::cout << s << " ";
     // std::cout << std::endl;
@@ -175,7 +204,7 @@ int main(void) {
         for (int c = 1; c <= sq_size; c++)
             if (matrix[r-1][c-1] != 0) {
                 auto row = row_case_occ(r, c, matrix[r-1][c-1], sq_size, block);
-                row.push_back(col_ranks[hint_name(n_hint)]);
+                row.push_back(col_ranks[{'e', n_hint, 0}]);
                 M.add_row(row);
                 row_codes.push_back({r, c, matrix[r-1][c-1]});
                 n_hint++;
