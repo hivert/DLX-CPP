@@ -24,7 +24,7 @@
 #include <ctime>      // For time
 #include <algorithm>  // For shuffle
 #include <vector>
-#include "dance.hpp"
+#include "dlx_matrix.hpp"
 
 
 
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 
     std::srand(static_cast<unsigned>(std::time(0)));
 
-    DLXMatrix M(6);
+    DLX_backtrack::DLXMatrix M(6);
     std::vector<int> vctr{3, 2, 1, 4, 0}, vctc{3, 2, 1, 4, 5, 0};
 
     M.add_row({0, 2});
@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
     M.search_iter(); std::cout << M.get_solution() << std::endl;
     M.search_iter(); std::cout << M.get_solution() << std::endl;
     std::cout << "Copy ========================= \n";
-    DLXMatrix N(M);
+    DLX_backtrack::DLXMatrix N(M);
     N.search_iter(); std::cout << N.get_solution() << std::endl;
     N.search_iter(); std::cout << N.get_solution() << std::endl;
     N.search_iter(); std::cout << N.get_solution() << std::endl;

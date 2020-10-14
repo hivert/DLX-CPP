@@ -3,24 +3,24 @@ CFLAGS = -Wall -lrt $(DEBUG)
 CXXFLAGS= -Wall -std=c++17 -g -O3
 CC = gcc
 
-MAIN_FILES = test_dance dance_test sudsol
+MAIN_FILES = test_dlx_matrix dlx_matrix_test sudsol
 
 #### Dépendances ####
 .PHONY: clean all
 all: $(MAIN_FILES)
 
-dance.o: dance.cpp dance.hpp
+dlx_matrix.o: dlx_matrix.cpp dlx_matrix.hpp
 
-dance_test: CXXFLAGS += -DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-dance_test: dance.cpp dance.hpp
-	${CXX} ${CXXFLAGS} dance.cpp -o dance_test
+dlx_matrix_test: CXXFLAGS += -DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+dlx_matrix_test: dlx_matrix.cpp dlx_matrix.hpp
+	${CXX} ${CXXFLAGS} dlx_matrix.cpp -o dlx_matrix_test
 
-test_dance: dance.o
-sudsol: dance.o
+test_dlx_matrix: dlx_matrix.o
+sudsol: dlx_matrix.o
 
 #### Cibles diverses ####
 clean:
 	$(RM) *.o $(MAIN_FILES)
 
-check: dance_test
-	./dance_test
+check: dlx_matrix_test
+	./dlx_matrix_test

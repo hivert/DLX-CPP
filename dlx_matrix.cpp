@@ -16,12 +16,14 @@
 // Implementation of Knuth dancing links backtrack algorithm
 //////////////////////////////////////////////////////////////
 #ifndef DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#ifndef DOCTEST_CONFIG_IMPLEMENT
 #define DOCTEST_CONFIG_DISABLE
+#endif
 #endif
 
 #include "doctest/doctest.h"
 
-#include "dance.hpp"
+#include "dlx_matrix.hpp"
 #include <algorithm>  // For sort, transform, random_shuffle
 #include <cassert>
 #include <iostream>
@@ -30,6 +32,7 @@
 #include <vector>
 
 
+namespace DLX_backtrack {
 
 std::vector<int> inverse_perm(const std::vector<int> &perm) {
     std::vector<int> inv(perm.size());
@@ -47,6 +50,61 @@ TEST_CASE("[dance]inverse_perm") {
     CHECK(inverse_perm({1, 3, 0, 2}) == std::vector<int>{2, 0, 3, 1});
     CHECK(inverse_perm({6, 1, 5, 3, 7, 0, 4, 2}) ==
           std::vector<int>{5, 1, 7, 3, 6, 2, 0, 4});
+}
+
+
+
+DLXMatrix::DLXMatrix(int nb_col) : heads(nb_col + 1) {
+    for (int i = 0; i <= nb_col; i++) {
+        heads[i].size = 0;
+        heads[i].col_id = i - 1;
+        heads[i].node.row_id = -1;
+        heads[i].node.head = &heads[i];
+        heads[i].node.left = heads[i].node.right = NULL;  // unused
+        heads[i].node.up = heads[i].node.down = &heads[i].node;
+    }
+    heads[nb_col].right = &heads[0];
+    for (int i = 0; i < nb_col; i++)
+        heads[i].right = &heads[i + 1];
+    heads[0].left = &heads[nb_col];
+    for (int i = 1; i <= nb_col; i++)
+        heads[i].left = &heads[i - 1];
+    search_down = true;
+}
+TEST_CASE("[dance]DLXMatrix::DLXMatrix(int nb_col)") {
+    CHECK(DLXMatrix(5).width() == 5);
+    CHECK(DLXMatrix(5).height() == 0);
+}
+
+DLXMatrix::DLXMatrix(int nb_col, const std::vector<std::vector<int> > &rows)
+    : DLXMatrix(nb_col) {
+    for (const auto &r : rows)
+        add_row(r);
+}
+
+DLXMatrix::DLXMatrix(const DLXMatrix &other) : DLXMatrix(other.width()) {
+    for (auto &row : other.rows)
+        add_row(row_to_intvector(row));
+    for (Node *n : other.work) {
+        Node *nd = rows[n->row_id].data() + (n - other.rows[n->row_id].data());
+        cover(nd->head);
+        choose(nd);
+    }
+    search_down = other.search_down;
+    nb_solutions = other.nb_solutions;
+    nb_choices = other.nb_choices;
+    nb_dances = other.nb_dances;
+}
+
+DLXMatrix &DLXMatrix::operator=(DLXMatrix other) {
+    std::swap(heads, other.heads);
+    std::swap(rows, other.rows);
+    std::swap(work, other.work);
+    search_down = other.search_down;
+    nb_solutions = other.nb_solutions;
+    nb_choices = other.nb_choices;
+    nb_dances = other.nb_dances;
+    return *this;
 }
 
 
@@ -88,49 +146,6 @@ std::vector<int> DLXMatrix::get_solution() {
     std::transform(work.begin(), work.end(), std::back_inserter(r),
                    [](Node *n) -> int { return n->row_id; });
     return r;
-}
-
-DLXMatrix::DLXMatrix(int nb_col) : heads(nb_col + 1) {
-    for (int i = 0; i <= nb_col; i++) {
-        heads[i].size = 0;
-        heads[i].col_id = i - 1;
-        heads[i].node.row_id = -1;
-        heads[i].node.head = &heads[i];
-        heads[i].node.left = heads[i].node.right = NULL;  // unused
-        heads[i].node.up = heads[i].node.down = &heads[i].node;
-    }
-    heads[nb_col].right = &heads[0];
-    for (int i = 0; i < nb_col; i++)
-        heads[i].right = &heads[i + 1];
-    heads[0].left = &heads[nb_col];
-    for (int i = 1; i <= nb_col; i++)
-        heads[i].left = &heads[i - 1];
-    search_down = true;
-}
-
-DLXMatrix::DLXMatrix(const DLXMatrix &other) : DLXMatrix(other.width()) {
-    for (auto &row : other.rows)
-        add_row(row_to_intvector(row));
-    for (Node *n : other.work) {
-        Node *nd = rows[n->row_id].data() + (n - other.rows[n->row_id].data());
-        cover(nd->head);
-        choose(nd);
-    }
-    search_down = other.search_down;
-    nb_solutions = other.nb_solutions;
-    nb_choices = other.nb_choices;
-    nb_dances = other.nb_dances;
-}
-
-DLXMatrix &DLXMatrix::operator=(DLXMatrix other) {
-    std::swap(heads, other.heads);
-    std::swap(rows, other.rows);
-    std::swap(work, other.work);
-    search_down = other.search_down;
-    nb_solutions = other.nb_solutions;
-    nb_choices = other.nb_choices;
-    nb_dances = other.nb_dances;
-    return *this;
 }
 
 void DLXMatrix::print_columns() const {
@@ -371,3 +386,5 @@ std::ostream &operator<<(std::ostream &out, const DLXMatrix &M) {
         out << M.row_to_boolvector(row) << "\n";
     return out;
 }
+
+} // namespace DLX_backtrack

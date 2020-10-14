@@ -25,7 +25,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <chrono>
-#include "dance.hpp"
+#include "dlx_matrix.hpp"
 
 
 namespace std {
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < nb_hint; i++)
         new_col({'e', i, 0});
 
-    DLXMatrix M(col_names.size());
+    DLX_backtrack::DLXMatrix M(col_names.size());
 
     // Rules of the Sudoku game
     for (int r = 1; r <= sq_size; r++) {

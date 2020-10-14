@@ -15,11 +15,13 @@
 
 // Implementation of Knuth dancing links backtrack algorithm
 //////////////////////////////////////////////////////////////
-#ifndef DANCE_HPP_
-#define DANCE_HPP_
+#ifndef DLX_MATRIX_HPP_
+#define DLX_MATRIX_HPP_
 
 #include <iostream>
 #include <vector>
+
+namespace DLX_backtrack {
 
 std::vector<int> inverse_perm(const std::vector<int> &perm);
 
@@ -39,6 +41,7 @@ class DLXMatrix {
 
   public:
     explicit DLXMatrix(int nb_col);
+    DLXMatrix(int nb_col, const std::vector<std::vector<int> > &);
     DLXMatrix(const DLXMatrix &);
     DLXMatrix &operator=(DLXMatrix other);
 
@@ -93,6 +96,10 @@ class DLXMatrix {
     bool search_down;
 };
 
+}  // namespace DLX_backtrack
+
+namespace std {   // FIXME : Changing std for standard type is UB...
+
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
     out << '[';
@@ -102,4 +109,6 @@ std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
     return out;
 }
 
-#endif  // DANCE_HPP_
+}
+
+#endif  // DLX_MATRIX_HPP_
