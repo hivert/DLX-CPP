@@ -20,6 +20,7 @@
 
 #include <iostream>
 #include <vector>
+#include <climits>
 
 namespace DLX_backtrack {
 
@@ -48,18 +49,19 @@ class DLXMatrix {
     size_t width() const { return heads.size() - 1; }
     size_t height() const { return rows.size(); }
 
-    void print_columns() const;
     void check_sizes() const;
 
     int add_row(const std::vector<int> &row);
     std::vector<int> int_row(size_t i) const ;
     std::vector<bool> bool_row(size_t i) const;
 
-    std::vector<std::vector<int>> search_rec(int max_sol);
+    std::vector<std::vector<int>> search_rec(int max_sol = INT_MAX);
     bool search_iter();
     bool search_iter(std::vector<int> &);
     std::vector<int> get_solution();
     bool search_random(std::vector<int> &);
+
+    bool is_solution(const std::vector<int> &);
 
     void reset();
 
@@ -104,7 +106,7 @@ template <typename T>
 std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
     out << '[';
     for (auto i : v)
-        std::cout << i << ", ";
+        out << i << ", ";
     out << "\b\b]";
     return out;
 }
