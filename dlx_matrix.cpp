@@ -153,7 +153,7 @@ DLXMatrix &DLXMatrix::operator=(DLXMatrix other) {
     nb_dances = other.nb_dances;
     return *this;
 }
-TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix::operator=") {
+TEST_CASE_FIXTURE(DLXMatrixFixture, "operator=") {
     for (auto &M : TestSample) {
         CAPTURE(M);
         DLXMatrix N(0);
@@ -175,7 +175,7 @@ std::vector<int> DLXMatrix::row_to_intvector(const std::vector<Node> &row) {
 std::vector<int> DLXMatrix::int_row(size_t i) const {
     return row_to_intvector(rows.at(i));
 }
-TEST_CASE("[dlx_matrix]DLXMatrix::int_row") {
+TEST_CASE("method int_row") {
     DLXMatrix M(5, {{0, 1}, {2, 3, 4}, {1, 2, 4}});
     CHECK(M.int_row(0) == std::vector<int>({0, 1}));
     CHECK(M.int_row(1) == std::vector<int>({2, 3, 4}));
@@ -201,7 +201,7 @@ DLXMatrix::row_to_boolvector(const std::vector<Node> &row) const {
 std::vector<bool> DLXMatrix::bool_row(size_t i) const {
     return row_to_boolvector(rows.at(i));
 }
-TEST_CASE("[dlx_matrix]DLXMatrix::bool_row") {
+TEST_CASE("method bool_row") {
     DLXMatrix M(5, {{0, 1}, {2, 3, 4}, {1, 2, 4}});
     CHECK(M.bool_row(0) == std::vector<bool>({1, 1, 0, 0, 0}));
     CHECK(M.bool_row(1) == std::vector<bool>({0, 0, 1, 1, 1}));
@@ -216,7 +216,7 @@ void DLXMatrix::check_sizes() const {
             throw std::logic_error("wrong size of column");
     }
 }
-TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix::check_sizes") {
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method check_sizes") {
     for (auto &M : TestSample) {
         CAPTURE(M);
         CHECK_NOTHROW(M.check_sizes());
@@ -249,7 +249,7 @@ int DLXMatrix::add_row(const std::vector<int> &r) {
         row[i].left = &row[i - 1];
     return row_id;
 }
-TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix::add_row") {
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method add_row") {
     SUBCASE("Correct row is added") {
         for (auto &M : TestSample) {
             CAPTURE(M);
@@ -290,7 +290,7 @@ bool DLXMatrix::is_solution(const std::vector<int> &sol) {
     return std::all_of(cols.begin(), cols.end(),
                        std::bind(std::equal_to<>(), _1, 1));
 }
-TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix::is_solution") {
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method is_solution") {
     SUBCASE("Empty 0x0 Matrix") {
         CHECK(empty0.is_solution({}));
         CHECK_THROWS_AS(empty0.is_solution({0}), std::out_of_range);
@@ -410,7 +410,7 @@ normalize_solutions(std::vector<std::vector<int>> sols) {
     return sols;
 }
 
-TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix::search_rec") {
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_rec") {
     CHECK(normalize_solutions(M6_10.search_rec()) ==
           std::vector<std::vector<int>>(
               {{0, 2, 3, 5}, {0, 3, 9}, {0, 4, 5, 6}, {1, 5, 8}, {4, 5, 7}}));
@@ -466,23 +466,39 @@ bool DLXMatrix::search_iter(std::vector<int> &v) {
         v = get_solution();
     return res;
 }
-TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix::search_iter") {
-    auto M = empty5;
-    CAPTURE(M);
-    DLXMatrix N(M);
-    std::vector<std::vector<int>> sols{};
-    while (M.search_iter())
-        sols.push_back(M.get_solution());
-    CHECK(sols == N.search_rec());
-}
-TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix::search_iter") {
-    for (auto M : TestSample) {
-        CAPTURE(M);
-        DLXMatrix N(M);
-        std::vector<std::vector<int>> sols{};
-        while (M.search_iter())
-            sols.push_back(M.get_solution());
-        CHECK(sols == N.search_rec());
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_iter") {
+    SUBCASE("agrees with search_rec") {
+        for (auto M : TestSample) {
+            CAPTURE(M);
+            DLXMatrix N(M);
+            std::vector<std::vector<int>> sols;
+            while (M.search_iter())
+                sols.push_back(M.get_solution());
+            CHECK(sols == N.search_rec());
+        }
+    }
+    SUBCASE("still work after copy") {
+        REQUIRE(M6_10.search_iter());
+        REQUIRE(M6_10.search_iter());
+        DLXMatrix N(M6_10);
+        std::vector<std::vector<int>> solM, solN;
+        while (M6_10.search_iter())
+            solM.push_back(M6_10.get_solution());
+        while (N.search_iter())
+            solN.push_back(N.get_solution());
+        CHECK(solN == solM);
+    }
+    SUBCASE("still work after assignment") {
+        REQUIRE(M6_10.search_iter());
+        REQUIRE(M6_10.search_iter());
+        DLXMatrix N(0);
+        N = M6_10;
+        std::vector<std::vector<int>> solM, solN;
+        while (M6_10.search_iter())
+            solM.push_back(M6_10.get_solution());
+        while (N.search_iter())
+            solN.push_back(N.get_solution());
+        CHECK(solN == solM);
     }
 }
 
@@ -503,6 +519,18 @@ void DLXMatrix::reset() {
         uncover(row->head);
     }
     search_down = true;
+}
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method reset") {
+    DLXMatrix N(M6_10);
+    REQUIRE(N.search_iter());
+    REQUIRE(N.search_iter());
+    N.reset();
+    std::vector<std::vector<int>> solM, solN;
+    while (M6_10.search_iter())
+        solM.push_back(M6_10.get_solution());
+    while (N.search_iter())
+        solN.push_back(N.get_solution());
+    CHECK(solN == solM);
 }
 
 DLXMatrix DLXMatrix::permuted_inv_columns(const std::vector<int> &perm) {
@@ -548,6 +576,14 @@ bool DLXMatrix::search_random(std::vector<int> &sol) {
             sol[i] = row_perm[v[i]];
     }
     return res;
+}
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_random") {
+    for (int i=0; i<20; i++) {
+        std::vector<int> sol;
+        REQUIRE(M6_10.search_random(sol));
+        CAPTURE(sol);
+        CHECK(M6_10.is_solution(sol));
+    }
 }
 
 // template <typename T>
