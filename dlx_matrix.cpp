@@ -509,7 +509,13 @@ std::vector<int> DLXMatrix::get_solution() {
                    [](Node *n) -> int { return n->row_id; });
     return r;
 }
-
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_iter") {
+    CHECK(M6_10.get_solution() == std::vector<int>({}));
+    REQUIRE(M6_10.search_iter());
+    CHECK(M6_10.get_solution() == std::vector<int>({5, 0, 2, 3}));
+    REQUIRE(M6_10.search_iter());
+    CHECK(M6_10.get_solution() == std::vector<int>({5, 0, 6, 4}));
+}
 
 void DLXMatrix::reset() {
     nb_solutions = nb_choices = nb_dances = 0;
@@ -535,7 +541,6 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method reset") {
 
 DLXMatrix DLXMatrix::permuted_inv_columns(const std::vector<int> &perm) {
     assert(perm.size() == width());
-
     DLXMatrix res(width());
     for (auto &row : rows) {
         std::vector<int> r;
@@ -549,13 +554,52 @@ DLXMatrix DLXMatrix::permuted_inv_columns(const std::vector<int> &perm) {
 DLXMatrix DLXMatrix::permuted_columns(const std::vector<int> &perm) {
     return permuted_inv_columns(inverse_perm(perm));
 }
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method permuted_columns") {
+    SUBCASE("empty0") {
+        std::vector<int> perm{};
+        CHECK(empty0.permuted_columns(perm).width() == 0);
+        CHECK(empty0.permuted_columns(perm).height() == 0);
+    }
+    SUBCASE("empty5") {
+        std::vector<int> perm{3,4,0,2,1};
+        CHECK(empty5.permuted_columns(perm).width() == 5);
+        CHECK(empty5.permuted_columns(perm).height() == 0);
+    }
+    SUBCASE("M6_10") {
+        std::vector<int> perm{4,3,2,0,5,1};
+        DLXMatrix M = M6_10.permuted_columns(perm);
+        CHECK(M.width() == M6_10.width());
+        CHECK(M.height() == M6_10.height());
+        CHECK(normalize_solutions(M.search_rec()) ==
+              normalize_solutions(M6_10.search_rec()));
+    }
+}
+
 DLXMatrix DLXMatrix::permuted_rows(const std::vector<int> &perm) {
     assert(perm.size() == height());
-
     DLXMatrix res(width());
     for (int i : perm)
         res.add_row(row_to_intvector(rows[i]));
     return res;
+}
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method permuted_rows") {
+    SUBCASE("empty") {
+        std::vector<int> perm{};
+        CHECK(empty0.permuted_rows(perm).width() == 0);
+        CHECK(empty0.permuted_rows(perm).height() == 0);
+        CHECK(empty5.permuted_rows(perm).width() == 5);
+        CHECK(empty5.permuted_rows(perm).height() == 0);
+    }
+    SUBCASE("M6_10") {
+        std::vector<int> perm{4,7,3,8,2,0,5,1,9,6};
+        DLXMatrix M = M6_10.permuted_rows(perm);
+        CHECK(M.width() == M6_10.width());
+        CHECK(M.height() == M6_10.height());
+        for (int i=0; i<10; i++) {
+            CAPTURE(i);
+            CHECK(M.int_row(i) == M6_10.int_row(perm[i]));
+        }
+    }
 }
 
 bool DLXMatrix::search_random(std::vector<int> &sol) {
