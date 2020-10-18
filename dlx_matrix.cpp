@@ -32,6 +32,7 @@
 #include <numeric>     // iota
 #include <stdexcept>   // out_of_range
 #include <vector>      // vector
+#include <experimental/iterator> // ostream_joiner
 
 namespace DLX_backtrack {
 
@@ -551,6 +552,31 @@ DLXMatrix DLXMatrix::permuted_inv_columns(const std::vector<int> &perm) {
     }
     return res;
 }
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method permuted_inv_columns") {
+    SUBCASE("empty0") {
+        std::vector<int> perm{};
+        CHECK(empty0.permuted_inv_columns(perm).width() == 0);
+        CHECK(empty0.permuted_inv_columns(perm).height() == 0);
+    }
+    SUBCASE("empty5") {
+        std::vector<int> perm{3,4,0,2,1};
+        CHECK(empty5.permuted_inv_columns(perm).width() == 5);
+        CHECK(empty5.permuted_inv_columns(perm).height() == 0);
+    }
+    SUBCASE("M6_10") {
+        std::vector<int> perm{4,3,2,0,5,1};
+        DLXMatrix M = M6_10.permuted_inv_columns(perm);
+        CHECK(M.width() == M6_10.width());
+        CHECK(M.height() == M6_10.height());
+        CHECK(normalize_solutions(M.search_rec()) ==
+              normalize_solutions(M6_10.search_rec()));
+        for (size_t r = 0; r < M6_10.height(); r++) {
+            for (size_t c = 0; r < M6_10.width(); r++) {
+                CHECK(M.bool_row(r)[perm[c]] == M6_10.bool_row(r)[c]);
+            }
+        }
+    }
+}
 DLXMatrix DLXMatrix::permuted_columns(const std::vector<int> &perm) {
     return permuted_inv_columns(inverse_perm(perm));
 }
@@ -572,6 +598,11 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method permuted_columns") {
         CHECK(M.height() == M6_10.height());
         CHECK(normalize_solutions(M.search_rec()) ==
               normalize_solutions(M6_10.search_rec()));
+        for (size_t r = 0; r < M6_10.height(); r++) {
+            for (size_t c = 0; r < M6_10.width(); r++) {
+                CHECK(M.bool_row(r)[c] == M6_10.bool_row(r)[perm[c]]);
+            }
+        }
     }
 }
 
@@ -630,14 +661,18 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_random") {
     }
 }
 
-// template <typename T>
-// std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
-//     out << '[';
-//     for (auto i : v)
-//         out << i << ", ";
-//     out << "\b\b]";
-//     return out;
-// }
+template <typename T>
+std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
+    out << '[';
+    auto it = v.begin(), end = v.end();
+    if (it != end) {
+        out << *it;
+        for (++it; it != end; ++it)
+            out << ", " << *it;
+    }
+    out << "]";
+    return out;
+}
 
 std::ostream &operator<<(std::ostream &out, const DLXMatrix &M) {
     for (auto &row : M.rows)
@@ -648,3 +683,13 @@ std::ostream &operator<<(std::ostream &out, const DLXMatrix &M) {
 TEST_SUITE_END();  // "[dlx_matrix]class DLXMatrix";
 
 }  // namespace DLX_backtrack
+
+
+namespace doctest {
+
+template <typename T>
+std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
+    return DLX_backtrack::operator<<(out, v);
+}
+
+}  // namespace doctest

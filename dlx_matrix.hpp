@@ -100,21 +100,4 @@ class DLXMatrix {
 
 }  // namespace DLX_backtrack
 
-namespace std {   // FIXME : Changing std for standard type is UB...
-
-template <typename T>
-std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
-    out << '[';
-    auto it = v.begin(), end = v.end();
-    if (it != end) {
-        out << *it;
-        for (++it ; it != end; ++it)
-            out << ", " << *it;
-    }
-    out << "]";
-    return out;
-}
-
-}  // namespace std
-
 #endif  // DLX_MATRIX_HPP_

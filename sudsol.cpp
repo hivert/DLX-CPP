@@ -234,11 +234,17 @@ int main(int argc, char* argv[]) {
 
     auto tcompute = std::chrono::high_resolution_clock::now();
 
-    auto res = M.search_rec(2);
-    assert(res.size() == 1);
+    std::vector<int> soldance;
+    if (!M.search_iter(soldance)) {
+        std::cout << "No solution found !" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    if (M.search_iter()) {
+        std::cout << "More than one solution found !" << std::endl;
+        exit(EXIT_FAILURE);
+    }
     SQMatrix solution(sq_size, std::vector<int>(sq_size));
-
-    for (int rind : res[0]) {
+    for (int rind : soldance) {
         auto [r, c, n] = row_codes[rind];
         solution[r-1][c-1] = n;
     }

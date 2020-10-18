@@ -3,7 +3,7 @@ CFLAGS = -Wall -lrt $(DEBUG)
 CXXFLAGS= -Wall -std=c++17 -g -O3
 CC = gcc
 
-MAIN_FILES = test_dlx_matrix dlx_matrix_test sudsol
+MAIN_FILES = dlx_matrix_test sudsol
 
 #### Dépendances ####
 .PHONY: clean all
