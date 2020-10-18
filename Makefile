@@ -22,5 +22,11 @@ sudsol: dlx_matrix.o
 clean:
 	$(RM) *.o $(MAIN_FILES)
 
-check: dlx_matrix_test
+check: dlx_matrix_test sudsol
 	./dlx_matrix_test
+	@echo -n "Testing sudsol : "; \
+	   ./sudsol examples/sudoku1.txt | grep -v '^# ' | \
+	   diff - sudoku1.output.txt; \
+	   if [ $$? -eq 0 ]; then echo "PASS"; else echo "FAIL"; fi
+
+
