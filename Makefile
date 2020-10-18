@@ -11,11 +11,11 @@ all: $(MAIN_FILES)
 
 dlx_matrix.o: dlx_matrix.cpp dlx_matrix.hpp
 
-dlx_matrix_test: CXXFLAGS += -DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-dlx_matrix_test: dlx_matrix.cpp dlx_matrix.hpp
-	${CXX} ${CXXFLAGS} dlx_matrix.cpp -o dlx_matrix_test
+# dlx_matrix_test: CXXFLAGS += -DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+# dlx_matrix_test: dlx_matrix.cpp dlx_matrix.hpp
+# 	${CXX} ${CXXFLAGS} dlx_matrix.cpp -o dlx_matrix_test
 
-test_dlx_matrix: dlx_matrix.o
+dlx_matrix_test: dlx_matrix.o
 sudsol: dlx_matrix.o
 
 #### Cibles diverses ####

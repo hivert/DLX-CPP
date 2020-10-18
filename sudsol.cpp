@@ -29,6 +29,9 @@
 #include "dlx_matrix.hpp"
 #include "utils.hpp"
 
+#define DOCTEST_CONFIG_IMPLEMENT
+#include "doctest/doctest.h"
+
 namespace cron = std::chrono;
 
 using col_type = std::tuple<char, int, int>;

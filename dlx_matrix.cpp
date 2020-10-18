@@ -15,11 +15,9 @@
 
 // Implementation of Knuth dancing links backtrack algorithm
 //////////////////////////////////////////////////////////////
-#ifndef DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#ifndef DOCTEST_CONFIG_IMPLEMENT
-#define DOCTEST_CONFIG_DISABLE
-#endif
-#endif
+// #ifndef DOCTEST_CONFIG_DISABLE
+// #define DOCTEST_CONFIG_IMPLEMENT
+// #endif
 
 #include "doctest/doctest.h"
 
