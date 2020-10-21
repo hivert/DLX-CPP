@@ -309,8 +309,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method is_solution") {
 
     CHECK(M5_3.is_solution({0, 1}));
     CHECK_THROWS_AS(M5_3.is_solution({1, 3}), std::out_of_range);
-    for (const auto &s :
-         {std::vector<int>{}, {0}, {1}, {2}, {0, 2}, {1, 2}, {0, 1, 2}}) {
+    for (const auto s :
+        {std::vector<int>{}, {0}, {1}, {2}, {0, 2}, {1, 2}, {0, 1, 2}}) {
         CAPTURE(s);
         CHECK_FALSE(M5_3.is_solution(s));
     }
@@ -571,7 +571,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method permuted_inv_columns") {
         CHECK(normalize_solutions(M.search_rec()) ==
               normalize_solutions(M6_10.search_rec()));
         for (size_t r = 0; r < M6_10.height(); r++) {
-            for (size_t c = 0; r < M6_10.width(); r++) {
+            for (size_t c = 0; c < M6_10.width(); c++) {
                 CHECK(M.bool_row(r)[perm[c]] == M6_10.bool_row(r)[c]);
             }
         }
@@ -599,7 +599,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method permuted_columns") {
         CHECK(normalize_solutions(M.search_rec()) ==
               normalize_solutions(M6_10.search_rec()));
         for (size_t r = 0; r < M6_10.height(); r++) {
-            for (size_t c = 0; r < M6_10.width(); r++) {
+            for (size_t c = 0; c < M6_10.width(); c++) {
                 CHECK(M.bool_row(r)[c] == M6_10.bool_row(r)[perm[c]]);
             }
         }
