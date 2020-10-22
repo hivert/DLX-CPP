@@ -570,3 +570,10 @@ TNEW4   = TT(["AAACCCF",
               "KKKMMMG",
               "KXXXYYY"],
              {})
+
+T26_96  = TT(["AABB",
+              "AAAB",
+              "CCCC",
+              "DCEE",
+              "DEEE"],
+             {(0, 0) : 2, (0, 2) : 2, (2, 3) : 5, (4, 3): 5})
