@@ -87,7 +87,6 @@ class DLXMatrix {
     void search_rec_internal(int, std::vector<std::vector<int>> &);
 
     static std::vector<int> row_to_intvector(const std::vector<Node> &);
-    std::vector<bool> row_to_boolvector_slow(const std::vector<Node> &) const;
     std::vector<bool> row_to_boolvector(const std::vector<Node> &) const;
     void print_solution(const std::vector<Node *> &) const;
 
