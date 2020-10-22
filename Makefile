@@ -1,6 +1,6 @@
 SHELL = /bin/sh
 CFLAGS = -Wall -lrt $(DEBUG)
-CXXFLAGS= -Wall -std=c++17 -g -O3
+CXXFLAGS= -Wall -std=c++17 -g -O3 -fPIC
 CC = gcc
 
 MAIN_FILES = sudsol dlx_matrix_test block_diagram_test
@@ -10,6 +10,8 @@ MAIN_FILES = sudsol dlx_matrix_test block_diagram_test
 all: $(MAIN_FILES)
 
 dlx_matrix.o: dlx_matrix.cpp dlx_matrix.hpp
+dlx_matrix.so: dlx_matrix.o
+	$(LINK.c) -shared $^ -o $@
 
 dlx_matrix_test: CXXFLAGS += -DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 dlx_matrix_test: dlx_matrix.cpp dlx_matrix.hpp
