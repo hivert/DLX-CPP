@@ -30,7 +30,7 @@ sudsol: dlx_matrix.o
 
 #### Cibles diverses ####
 clean:
-	$(RM) *.o $(MAIN_FILES)
+	$(RM) *.o *.so $(MAIN_FILES)
 
 check: dlx_matrix_test block_diagram_test sudsol libdlx_matrix.so
 	./dlx_matrix_test
