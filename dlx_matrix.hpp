@@ -51,9 +51,13 @@ class DLXMatrix {
 
     void check_sizes() const;
 
-    int add_row(const std::vector<int> &row);
-    std::vector<int> int_row(size_t i) const;
-    std::vector<bool> bool_row(size_t i) const;
+    int add_row(const std::vector<int> &row) { return add_row_sparse(row); }
+    int add_row_sparse(const std::vector<int> &row);
+    int add_row_dense(const std::vector<bool> &row);
+    std::vector<int> row_sparse(size_t i) const;
+    std::vector<bool> row_dense(size_t i) const;
+
+    std::vector<int> row_dense_to_sparse(const std::vector<bool> &row) const;
 
     std::vector<std::vector<int>> search_rec(int max_sol = INT_MAX);
     bool search_iter();

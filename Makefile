@@ -1,6 +1,6 @@
 SHELL = /bin/sh
 CFLAGS = -Wall -lrt $(DEBUG)
-CXXFLAGS= -Wall -std=c++17 -g -O3 -fPIC
+CXXFLAGS= -Wall -std=c++17 -g -O3
 CC = gcc
 
 MAIN_FILES = sudsol dlx_matrix_test block_diagram_test
@@ -10,7 +10,12 @@ MAIN_FILES = sudsol dlx_matrix_test block_diagram_test
 all: $(MAIN_FILES)
 
 dlx_matrix.o: dlx_matrix.cpp dlx_matrix.hpp
-dlx_matrix.so: dlx_matrix.o
+
+libdlx_matrix.o: CXXFLAGS += -fPIC
+libdlx_matrix.o: libdlx_matrix.cpp dlx_matrix.hpp
+
+libdlx_matrix.so: CXXFLAGS += -fPIC
+libdlx_matrix.so: libdlx_matrix.o
 	$(LINK.c) -shared $^ -o $@
 
 dlx_matrix_test: CXXFLAGS += -DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
@@ -27,12 +32,12 @@ sudsol: dlx_matrix.o
 clean:
 	$(RM) *.o $(MAIN_FILES)
 
-check: dlx_matrix_test block_diagram_test sudsol
+check: dlx_matrix_test block_diagram_test sudsol libdlx_matrix.so
 	./dlx_matrix_test
 	./block_diagram_test
 	@echo -n "Testing sudsol : "; \
 	   ./sudsol examples/sudoku1.txt | grep -v '^# ' | \
 	   diff - sudoku1.output.txt; \
 	   if [ $$? -eq 0 ]; then echo "PASS"; else echo "FAIL"; fi
-
+	sage -t inter.sage
 
