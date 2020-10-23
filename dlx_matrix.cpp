@@ -321,6 +321,12 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method row_to_dense") {
 int DLXMatrix::add_row_dense(const std::vector<bool> &r) {
     return add_row_sparse(row_to_sparse(r));
 }
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method add_row_dense") {
+    CHECK(M5_3.add_row_dense({0, 0, 1, 1, 0}) == 3);
+    CHECK(M5_3.row_sparse(3) == std::vector<int>({2, 3}));
+    CHECK_THROWS_AS(M5_3.add_row_dense({0, 1, 1, 0}), std::out_of_range);
+    CHECK_THROWS_AS(M5_3.add_row_dense({0, 1, 1, 0, 1, 0}), std::out_of_range);
+}
 
 bool DLXMatrix::is_solution(const std::vector<int> &sol) {
     using namespace std::placeholders;
