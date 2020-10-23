@@ -185,19 +185,7 @@ TEST_CASE("method row_sparse") {
 
 std::vector<bool>
 DLXMatrix::row_to_boolvector(const std::vector<Node> &row) const {
-    auto rowint = DLXMatrix::row_to_intvector(row);
-    std::sort(rowint.begin(), rowint.end());
-    std::vector<bool> res(width(), false);
-    auto it = rowint.begin();
-    size_t i = 0;
-    while (i < width() && it < rowint.end()) {
-        if (static_cast<int>(i) == *it) {
-            res[i] = true;
-            it++;
-        }
-        i++;
-    }
-    return res;
+    return row_to_dense(DLXMatrix::row_to_intvector(row));
 }
 std::vector<bool> DLXMatrix::row_dense(size_t i) const {
     return row_to_boolvector(rows.at(i));
@@ -289,7 +277,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method add_row") {
 }
 
 std::vector<int>
-DLXMatrix::row_dense_to_sparse(const std::vector<bool> &row) const {
+DLXMatrix::row_to_sparse(const std::vector<bool> &row) const {
     if (row.size() != width())
         throw std::out_of_range("Wrong row size");
     std::vector<int> res;
@@ -299,16 +287,39 @@ DLXMatrix::row_dense_to_sparse(const std::vector<bool> &row) const {
     }
     return res;
 }
-TEST_CASE_FIXTURE(DLXMatrixFixture, "method row_dense_to_sparse") {
-    CHECK(M5_3.row_dense_to_sparse({0, 1, 1, 0, 0}) == std::vector<int>({1, 2}));
-    CHECK(M5_3.row_dense_to_sparse({0, 1, 0, 1, 1}) == std::vector<int>({1, 3, 4}));
-    CHECK_THROWS_AS(M5_3.row_dense_to_sparse({0, 1, 1, 0, 1, 1}), std::out_of_range);
-    CHECK_THROWS_AS(M5_3.row_dense_to_sparse({0, 1, 1, 0}), std::out_of_range);
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method row_to_sparse") {
+    CHECK(M5_3.row_to_sparse({0, 1, 1, 0, 0}) == std::vector<int>({1, 2}));
+    CHECK(M5_3.row_to_sparse({0, 1, 0, 1, 1}) == std::vector<int>({1, 3, 4}));
+    CHECK_THROWS_AS(M5_3.row_to_sparse({0, 1, 1, 0, 1, 1}), std::out_of_range);
+    CHECK_THROWS_AS(M5_3.row_to_sparse({0, 1, 1, 0}), std::out_of_range);
 }
 
+std::vector<bool>
+DLXMatrix::row_to_dense(std::vector<int> rowint) const {
+    // Check for bound
+    for (auto i : rowint)
+        heads.at(i + 1);
+    std::sort(rowint.begin(), rowint.end());
+    std::vector<bool> res(width(), false);
+    auto it = rowint.begin();
+    size_t i = 0;
+    while (i < width() && it < rowint.end()) {
+        if (static_cast<int>(i) == *it) {
+            res[i] = true;
+            it++;
+        }
+        i++;
+    }
+    return res;
+}
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method row_to_dense") {
+    CHECK(M5_3.row_to_dense({1, 2}) == std::vector<bool>({0, 1, 1, 0, 0}));
+    CHECK(M5_3.row_to_dense({1, 3, 4}) == std::vector<bool>({0, 1, 0, 1, 1}));
+    CHECK_THROWS_AS(M5_3.row_to_dense({1, 3, 5}), std::out_of_range);
+}
 
 int DLXMatrix::add_row_dense(const std::vector<bool> &r) {
-    return add_row_sparse(row_dense_to_sparse(r));
+    return add_row_sparse(row_to_sparse(r));
 }
 
 bool DLXMatrix::is_solution(const std::vector<int> &sol) {

@@ -57,7 +57,8 @@ class DLXMatrix {
     std::vector<int> row_sparse(size_t i) const;
     std::vector<bool> row_dense(size_t i) const;
 
-    std::vector<int> row_dense_to_sparse(const std::vector<bool> &row) const;
+    std::vector<int> row_to_sparse(const std::vector<bool> &row) const;
+    std::vector<bool> row_to_dense(std::vector<int> row) const;
 
     std::vector<std::vector<int>> search_rec(int max_sol = INT_MAX);
     bool search_iter();
