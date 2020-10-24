@@ -32,12 +32,16 @@ sudsol: dlx_matrix.o
 clean:
 	$(RM) *.o *.so $(MAIN_FILES)
 
-check: dlx_matrix_test block_diagram_test sudsol libdlx_matrix.so
+check-dlx_matrix: dlx_matrix_test
 	./dlx_matrix_test
+check-block_diagram: block_diagram_test
 	./block_diagram_test
+check-sudsol: sudsol
 	@echo -n "Testing sudsol : "; \
 	   ./sudsol examples/sudoku1.txt | grep -v '^# ' | \
 	   diff - sudoku1.output.txt; \
 	   if [ $$? -eq 0 ]; then echo "PASS"; else echo "FAIL"; fi
+check-inter: libdlx_matrix.so
 	sage -t inter.sage
 
+check: check-dlx_matrix check-block_diagram check-sudsol check-inter
