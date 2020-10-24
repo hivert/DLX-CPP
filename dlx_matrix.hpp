@@ -91,8 +91,8 @@ class DLXMatrix {
     void unchoose(Node *n);
     void search_rec_internal(int, std::vector<std::vector<int>> &);
 
-    static std::vector<int> row_to_intvector(const std::vector<Node> &);
-    std::vector<bool> row_to_boolvector(const std::vector<Node> &) const;
+    static std::vector<int> row_sparse(const std::vector<Node> &);
+    std::vector<bool> row_dense(const std::vector<Node> &) const;
     void print_solution(const std::vector<Node *> &) const;
 
     std::vector<Header> heads;
