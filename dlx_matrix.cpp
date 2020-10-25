@@ -141,7 +141,6 @@ DLXMatrix::DLXMatrix(const DLXMatrix &other) : DLXMatrix(other.width()) {
         choose(nd);
     }
     search_down = other.search_down;
-    nb_solutions = other.nb_solutions;
     nb_choices = other.nb_choices;
     nb_dances = other.nb_dances;
 }
@@ -162,7 +161,6 @@ DLXMatrix &DLXMatrix::operator=(DLXMatrix other) {
     std::swap(rows, other.rows);
     std::swap(work, other.work);
     search_down = other.search_down;
-    nb_solutions = other.nb_solutions;
     nb_choices = other.nb_choices;
     nb_dances = other.nb_dances;
     return *this;
@@ -435,16 +433,15 @@ DLXMatrix::Header *DLXMatrix::choose_min() {
 // Knuth dancing links search algorithm
 // Recusive version
 ///////////////////////////////////////
-std::vector<std::vector<int>> DLXMatrix::search_rec(int maxsol) {
+std::vector<std::vector<int>> DLXMatrix::search_rec(size_t maxsol) {
     std::vector<std::vector<int>> res{};
-    nb_solutions = nb_choices = nb_dances = 0;
+    nb_choices = nb_dances = 0;
     search_rec_internal(maxsol, res);
     return res;
 }
-void DLXMatrix::search_rec_internal(int maxsol,
+void DLXMatrix::search_rec_internal(size_t maxsol,
                                     std::vector<std::vector<int>> &res) {
     if (master()->right == master()) {
-        nb_solutions++;
         res.push_back(get_solution());
         return;
     }
@@ -458,7 +455,7 @@ void DLXMatrix::search_rec_internal(int maxsol,
         choose(row);
         search_rec_internal(maxsol, res);
         unchoose(row);
-        if (nb_solutions >= maxsol)
+        if (res.size() >= maxsol)
             break;
     }
     uncover(choice);
@@ -496,7 +493,6 @@ bool DLXMatrix::search_iter() {
     while (search_down || !work.empty()) {
         if (search_down) {  // going down the recursion
             if (master()->right == master()) {
-                nb_solutions++;
                 search_down = false;
                 return true;
             }
@@ -580,7 +576,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_iter") {
 }
 
 void DLXMatrix::reset() {
-    nb_solutions = nb_choices = nb_dances = 0;
+    nb_choices = nb_dances = 0;
     while (!work.empty()) {
         Node *row = work.back();
         unchoose(row);

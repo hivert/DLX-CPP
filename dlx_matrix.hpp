@@ -60,7 +60,7 @@ class DLXMatrix {
     std::vector<int> row_to_sparse(const std::vector<bool> &row) const;
     std::vector<bool> row_to_dense(std::vector<int> row) const;
 
-    std::vector<std::vector<int>> search_rec(int max_sol = INT_MAX);
+    std::vector<std::vector<int>> search_rec(size_t max_sol = SIZE_MAX);
     bool search_iter();
     bool search_iter(std::vector<int> &);
     std::vector<int> get_solution();
@@ -70,7 +70,7 @@ class DLXMatrix {
 
     void reset();
 
-    int nb_solutions, nb_choices, nb_dances;
+    int nb_choices, nb_dances;
 
     DLXMatrix permuted_columns(const std::vector<int> &perm);
     DLXMatrix permuted_inv_columns(const std::vector<int> &inv);
@@ -89,7 +89,7 @@ class DLXMatrix {
     void uncover(Header *h);
     void choose(Node *n);
     void unchoose(Node *n);
-    void search_rec_internal(int, std::vector<std::vector<int>> &);
+    void search_rec_internal(size_t, std::vector<std::vector<int>> &);
 
     static std::vector<int> row_sparse(const std::vector<Node> &);
     std::vector<bool> row_dense(const std::vector<Node> &) const;
