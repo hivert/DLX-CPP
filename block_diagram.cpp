@@ -29,7 +29,6 @@
 #include <sstream>
 #include <vector>
 
-
 //////////////////////////////////////////////////////
 TEST_SUITE_BEGIN("[block_diagram]class BlockDiagram");
 //////////////////////////////////////////////////////
@@ -157,15 +156,13 @@ std::string BlockDiagram::to_string(std::vector<std::vector<int>> fill) const {
                     cont += " ";
                 res += cont;
             }
-            res += c + 1 < width && blocks[r][c] == blocks[r][c + 1]
-                       ? " "
-                       : "|";
+            res +=
+                c + 1 < width && blocks[r][c] == blocks[r][c + 1] ? " " : "|";
         }
         res += "\n+";
         for (size_t c = 0; c < width; ++c) {
-            res += r + 1 < height && blocks[r][c] == blocks[r + 1][c]
-                       ? "   +"
-                       : "---+";
+            res += r + 1 < height && blocks[r][c] == blocks[r + 1][c] ? "   +"
+                                                                      : "---+";
         }
         res += "\n";
     }

@@ -15,16 +15,16 @@
 
 // Implementation of Knuth dancing links backtrack algorithm
 //////////////////////////////////////////////////////////////
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <iomanip>
 #include <cassert>
-#include <ctime>          // time
-#include <vector>
+#include <chrono>
+#include <cstring>
+#include <ctime>  // time
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <tuple>
 #include <unordered_map>
-#include <chrono>
+#include <vector>
 
 #include "dlx_matrix.hpp"
 #include "utils.hpp"
@@ -32,15 +32,14 @@
 namespace cron = std::chrono;
 
 using col_type = std::tuple<char, int, int>;
-using SQMatrix = std::vector<std::vector<int> >;
+using SQMatrix = std::vector<std::vector<int>>;
 
 SQMatrix blocks, matrix;
 
 int row_size, col_size, sq_size, nb_hint;
 std::vector<col_type> col_names;
-std::vector<std::tuple<int, int, int> > row_codes;
+std::vector<std::tuple<int, int, int>> row_codes;
 std::unordered_map<col_type, size_t> col_ranks;
-
 
 void new_col(col_type name) {
     col_ranks.insert(std::make_pair(name, col_names.size()));
@@ -52,47 +51,48 @@ std::vector<int> row_case_occ(int row, int col, int nb, SQMatrix &blocks) {
     res.push_back(col_ranks[{'r', row, nb}]);
     res.push_back(col_ranks[{'c', col, nb}]);
     res.push_back(col_ranks[{'s', row, col}]);
-    res.push_back(col_ranks[{'b', blocks[row-1][col-1], nb}]);
+    res.push_back(col_ranks[{'b', blocks[row - 1][col - 1], nb}]);
     return res;
 }
 
-
 void cout_mat(SQMatrix &m) {
     for (int r = 0; r < sq_size; r++) {
-        if ((row_size != 0) && !(r % row_size)) std::cout << "\n";
+        if ((row_size != 0) && !(r % row_size))
+            std::cout << "\n";
         std::cout << "  ";
         for (int c = 0; c < sq_size; c++) {
-            if ((col_size != 0) && !(c % col_size)) std::cout << " ";
-            if (m[r][c] != 0)  std::cout << m[r][c] << " ";
-            else               std::cout << ". ";
+            if ((col_size != 0) && !(c % col_size))
+                std::cout << " ";
+            if (m[r][c] != 0)
+                std::cout << m[r][c] << " ";
+            else
+                std::cout << ". ";
         }
         std::cout << "\n";
     }
 }
 
-
-void read_sudoku(std::istream& in) {
+void read_sudoku(std::istream &in) {
     char type, unused;
     in >> type;
     switch (type) {
-    case 's' :
+    case 's':
         in >> col_size >> unused >> row_size;
-        assert (unused == 'x');
-	sq_size = col_size*row_size;
-        std::cout << "# Standard sudoku (block size = "
-                  << col_size << "x" << row_size
-                  << ", square size = " << sq_size << ")\n";
+        assert(unused == 'x');
+        sq_size = col_size * row_size;
+        std::cout << "# Standard sudoku (block size = " << col_size << "x"
+                  << row_size << ", square size = " << sq_size << ")\n";
         break;
 
-    case 'g' :
+    case 'g':
         in >> sq_size;
- 	std::cout << "# Generalized sudoku "
-                  << sq_size << "x" << sq_size << "\n";
+        std::cout << "# Generalized sudoku " << sq_size << "x" << sq_size
+                  << "\n";
         break;
 
-    default :
+    default:
         std::cerr << "Unknown block type <" << type << std::endl;
-	exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
     // Dynamic allocation of the matrices.
@@ -100,10 +100,10 @@ void read_sudoku(std::istream& in) {
     blocks.resize(sq_size, empty_row);
     matrix.resize(sq_size, empty_row);
 
-    if (type=='s') {  // Standard block structure
+    if (type == 's') {  // Standard block structure
         for (int r = 0; r < sq_size; r++)
             for (int c = 0; c < sq_size; c++)
-                blocks[r][c] = c / col_size + row_size*(r / row_size)+1;
+                blocks[r][c] = c / col_size + row_size * (r / row_size) + 1;
     } else {  // Generalized block structure
         for (int r = 0; r < sq_size; r++)
             for (int c = 0; c < sq_size; c++)
@@ -126,11 +126,10 @@ void read_sudoku(std::istream& in) {
                 matrix[r][c] = 0;
                 in >> matrix[r][c];
                 if (matrix[r][c] == 0) {
-                    std::cerr << "Bad character <" << in.peek()
-                              << ">" << std::endl;
+                    std::cerr << "Bad character <" << in.peek() << ">"
+                              << std::endl;
                     exit(EXIT_FAILURE);
-                }
-                else {
+                } else {
                     nb_hint++;
                 }
             }
@@ -138,20 +137,19 @@ void read_sudoku(std::istream& in) {
     }
 }
 
-
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
 
     auto tstart = cron::high_resolution_clock::now();
-    if ( argc > 1 ) {
+    if (argc > 1) {
         std::ifstream ifile(argv[1]);
-        if ( ifile ) {
+        if (ifile) {
             read_sudoku(ifile);
         } else {
             std::cerr << "File not found : " << argv[1] << std::endl;
             exit(EXIT_FAILURE);
         }
     } else {
-      read_sudoku(std::cin);
+        read_sudoku(std::cin);
     }
 
     auto tencode = std::chrono::high_resolution_clock::now();
@@ -184,11 +182,11 @@ int main(int argc, char* argv[]) {
     nb_hint = 0;
     for (int r = 1; r <= sq_size; r++) {
         for (int c = 1; c <= sq_size; c++) {
-            if (matrix[r-1][c-1] != 0) {
-                auto row = row_case_occ(r, c, matrix[r-1][c-1], blocks);
+            if (matrix[r - 1][c - 1] != 0) {
+                auto row = row_case_occ(r, c, matrix[r - 1][c - 1], blocks);
                 row.push_back(col_ranks[{'e', nb_hint, 0}]);
                 M.add_row(row);
-                row_codes.push_back({r, c, matrix[r-1][c-1]});
+                row_codes.push_back({r, c, matrix[r - 1][c - 1]});
                 nb_hint++;
             }
         }
@@ -208,7 +206,7 @@ int main(int argc, char* argv[]) {
     SQMatrix solution(sq_size, std::vector<int>(sq_size));
     for (int rind : soldance) {
         auto [r, c, n] = row_codes[rind];
-        solution[r-1][c-1] = n;
+        solution[r - 1][c - 1] = n;
     }
 
     auto endcompute = cron::high_resolution_clock::now();
@@ -218,15 +216,16 @@ int main(int argc, char* argv[]) {
     auto endprint = cron::high_resolution_clock::now();
     std::cout << "# Number of choices: " << M.nb_choices
               << ", Number of dances: " << M.nb_dances << "\n";
-    std::cout << std::fixed << std::setprecision(0) << "# Timings: parse = "
-              << cron::duration<float, std::micro>(tencode-tstart).count()
-              << "μs, encode = "
-              << cron::duration<float, std::micro>(tcompute - tencode).count()
-              << "μs, solve = "
-              << cron::duration<float, std::micro>(endcompute - tcompute).count()
-              << "μs, output = "
-              << cron::duration<float, std::micro>(endprint - endcompute).count()
-              << "μs\n# Total = "
-              << cron::duration<float, std::micro>(endprint - tstart).count()
-              << "μs\n";
+    std::cout
+        << std::fixed << std::setprecision(0) << "# Timings: parse = "
+        << cron::duration<float, std::micro>(tencode - tstart).count()
+        << "μs, encode = "
+        << cron::duration<float, std::micro>(tcompute - tencode).count()
+        << "μs, solve = "
+        << cron::duration<float, std::micro>(endcompute - tcompute).count()
+        << "μs, output = "
+        << cron::duration<float, std::micro>(endprint - endcompute).count()
+        << "μs\n# Total = "
+        << cron::duration<float, std::micro>(endprint - tstart).count()
+        << "μs\n";
 }

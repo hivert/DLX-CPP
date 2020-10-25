@@ -18,9 +18,9 @@
 #ifndef DLX_MATRIX_HPP_
 #define DLX_MATRIX_HPP_
 
+#include <climits>
 #include <iostream>
 #include <vector>
-#include <climits>
 
 namespace DLX_backtrack {
 
@@ -42,7 +42,7 @@ class DLXMatrix {
 
   public:
     explicit DLXMatrix(int nb_col);
-    DLXMatrix(int nb_col, const std::vector<std::vector<int> > &);
+    DLXMatrix(int nb_col, const std::vector<std::vector<int>> &);
     DLXMatrix(const DLXMatrix &);
     DLXMatrix &operator=(DLXMatrix other);
 
@@ -96,7 +96,7 @@ class DLXMatrix {
     void print_solution(const std::vector<Node *> &) const;
 
     std::vector<Header> heads;
-    std::vector<std::vector<Node> > rows;
+    std::vector<std::vector<Node>> rows;
 
     std::vector<Node *> work;
     bool search_down;

@@ -21,7 +21,7 @@
 #include <vector>
 
 class BlockDiagram {
-public:
+  public:
     BlockDiagram(size_t height, size_t width);
 
     size_t get_width() const { return width; }
@@ -42,7 +42,7 @@ public:
     friend std::istream &operator>>(std::istream &, BlockDiagram &);
     friend std::ostream &operator<<(std::ostream &, const BlockDiagram &);
 
-private:
+  private:
     size_t height, width;
     std::vector<std::vector<int>> blocks, contents;
 };

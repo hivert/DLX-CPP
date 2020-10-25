@@ -71,7 +71,7 @@ TEST_SUITE_BEGIN("[dlx_matrix]class DLXMatrix");
 ////////////////////////////////////////////////
 
 class DLXMatrixFixture {
-public:
+  public:
     // clang-format off
     DLXMatrixFixture() :
         empty0(0), empty1(1), empty5(5),
@@ -83,7 +83,7 @@ public:
         TestSample({empty0, empty1, empty5, M1_1, M5_2, M5_3, M6_10})
       {}
     // clang-format on
-protected:
+  protected:
     DLXMatrix empty0, empty1, empty5, M1_1, M5_2, M5_3, M6_10;
     std::vector<DLXMatrix> TestSample;
 };
@@ -338,7 +338,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method add_row_dense") {
 }
 
 bool DLXMatrix::is_solution(const std::vector<int> &sol) {
-    using namespace std::placeholders;
+    using std::placeholders::_1;
     std::vector<int> cols(width());
     for (int r : sol)
         std::transform(cols.begin(), cols.end(), row_dense(r).begin(),
