@@ -25,10 +25,11 @@
 
 #include "dlx_matrix.hpp"
 
-#include <algorithm>   // sort, transform, random_shuffle
+#include <algorithm>   // sort, transform, shuffle
 #include <functional>  // bind, equal_to, _2
 #include <iostream>    // cout, cin, ...
 #include <numeric>     // iota
+#include <random>      // default_random_engine
 #include <stdexcept>   // out_of_range
 #include <vector>      // vector
 
@@ -57,7 +58,7 @@ TEST_SUITE_BEGIN("[dlx_matrix]Errors");
 ///////////////////////////////////////
 
 struct size_mismatch_error : public std::runtime_error {
-    size_mismatch_error(std::string s, int i, int j)
+    size_mismatch_error(const std::string &s, int i, int j)
         : std::runtime_error("Wrong " + s + " size : " + std::to_string(i) +
                              " (expecting " + std::to_string(j) + ")") {}
 };
@@ -88,13 +89,14 @@ class DLXMatrixFixture {
     std::vector<DLXMatrix> TestSample;
 };
 
-DLXMatrix::DLXMatrix(int nb_col) : heads(nb_col + 1) {
+DLXMatrix::DLXMatrix(int nb_col)
+    : nb_choices(0), nb_dances(0), heads(nb_col + 1), search_down(true) {
     for (int i = 0; i <= nb_col; i++) {
         heads[i].size = 0;
         heads[i].col_id = i - 1;
         heads[i].node.row_id = -1;
         heads[i].node.head = &heads[i];
-        heads[i].node.left = heads[i].node.right = NULL;  // unused
+        heads[i].node.left = heads[i].node.right = nullptr;  // unused
         heads[i].node.up = heads[i].node.down = &heads[i].node;
     }
     heads[nb_col].right = &heads[0];
@@ -103,7 +105,6 @@ DLXMatrix::DLXMatrix(int nb_col) : heads(nb_col + 1) {
     heads[0].left = &heads[nb_col];
     for (int i = 1; i <= nb_col; i++)
         heads[i].left = &heads[i - 1];
-    search_down = true;
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix(int nb_col)") {
     CHECK(empty0.width() == 0);
@@ -135,7 +136,7 @@ DLXMatrix::DLXMatrix(const DLXMatrix &other) : DLXMatrix(other.width()) {
     for (auto &row : other.rows)
         add_row_sparse(row_sparse(row));
     for (Node *n : other.work) {
-        Node *nd = rows[n->row_id].data() + (n - other.rows[n->row_id].data());
+        Node *nd = &rows[n->row_id][n - other.rows[n->row_id].data()];
         cover(nd->head);
         choose(nd);
     }
@@ -303,15 +304,15 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method row_to_sparse") {
     CHECK_THROWS_AS(M5_3.row_to_sparse({0, 1, 1, 0}), size_mismatch_error);
 }
 
-std::vector<bool> DLXMatrix::row_to_dense(std::vector<int> rowint) const {
+std::vector<bool> DLXMatrix::row_to_dense(std::vector<int> row) const {
     // Check for bound
-    for (auto i : rowint)
+    for (auto i : row)
         heads.at(i + 1);
-    std::sort(rowint.begin(), rowint.end());
+    std::sort(row.begin(), row.end());
     std::vector<bool> res(width(), false);
-    auto it = rowint.begin();
+    auto it = row.begin();
     size_t i = 0;
-    while (i < width() && it < rowint.end()) {
+    while (i < width() && it < row.end()) {
         if (static_cast<int>(i) == *it) {
             res[i] = true;
             it++;
@@ -340,9 +341,10 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method add_row_dense") {
 bool DLXMatrix::is_solution(const std::vector<int> &sol) {
     using std::placeholders::_1;
     std::vector<int> cols(width());
-    for (int r : sol)
+    for (int r : sol) {
         std::transform(cols.begin(), cols.end(), row_dense(r).begin(),
                        cols.begin(), std::plus<>());
+    }
     return std::all_of(cols.begin(), cols.end(),
                        std::bind(std::equal_to<>(), _1, 1));
 }
@@ -366,7 +368,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method is_solution") {
     SUBCASE("M5_3 Matrix") {
         CHECK(M5_3.is_solution({0, 1}));
         CHECK_THROWS_AS(M5_3.is_solution({1, 3}), std::out_of_range);
-        for (const auto s :
+        for (const auto &s :
              {std::vector<int>{}, {0}, {1}, {2}, {0, 2}, {1, 2}, {0, 1, 2}}) {
             CAPTURE(s);
             CHECK_FALSE(M5_3.is_solution(s));
@@ -433,13 +435,13 @@ DLXMatrix::Header *DLXMatrix::choose_min() {
 // Knuth dancing links search algorithm
 // Recusive version
 ///////////////////////////////////////
-std::vector<std::vector<int>> DLXMatrix::search_rec(size_t maxsol) {
+std::vector<std::vector<int>> DLXMatrix::search_rec(size_t max_sol) {
     std::vector<std::vector<int>> res{};
     nb_choices = nb_dances = 0;
-    search_rec_internal(maxsol, res);
+    search_rec_internal(max_sol, res);
     return res;
 }
-void DLXMatrix::search_rec_internal(size_t maxsol,
+void DLXMatrix::search_rec_internal(size_t max_sol,
                                     std::vector<std::vector<int>> &res) {
     if (master()->right == master()) {
         res.push_back(get_solution());
@@ -453,9 +455,9 @@ void DLXMatrix::search_rec_internal(size_t maxsol,
     cover(choice);
     for (Node *row = choice->node.down; row != &choice->node; row = row->down) {
         choose(row);
-        search_rec_internal(maxsol, res);
+        search_rec_internal(max_sol, res);
         unchoose(row);
-        if (res.size() >= maxsol)
+        if (res.size() >= max_sol)
             break;
     }
     uncover(choice);
@@ -692,13 +694,16 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method permuted_rows") {
 }
 
 bool DLXMatrix::search_random(std::vector<int> &sol) {
+    std::random_device rd{};
+    std::default_random_engine rng{rd()};
+
     std::vector<int> row_perm(height());
     std::iota(row_perm.begin(), row_perm.end(), 0);
-    std::random_shuffle(row_perm.begin(), row_perm.end());
+    std::shuffle(row_perm.begin(), row_perm.end(), rng);
 
     std::vector<int> col_perm(width());
     std::iota(col_perm.begin(), col_perm.end(), 0);
-    std::random_shuffle(col_perm.begin(), col_perm.end());
+    std::shuffle(col_perm.begin(), col_perm.end(), rng);
 
     DLXMatrix M = permuted_columns(col_perm).permuted_rows(row_perm);
     bool res;

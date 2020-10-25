@@ -55,18 +55,19 @@ std::vector<int> row_case_occ(int row, int col, int nb, SQMatrix &blocks) {
     return res;
 }
 
-void cout_mat(SQMatrix &m) {
+void cout_mat(const SQMatrix &m) {
     for (int r = 0; r < sq_size; r++) {
-        if ((row_size != 0) && !(r % row_size))
+        if ((row_size != 0) && (r % row_size == 0))
             std::cout << "\n";
         std::cout << "  ";
         for (int c = 0; c < sq_size; c++) {
-            if ((col_size != 0) && !(c % col_size))
+            if ((col_size != 0) && (c % col_size == 0))
                 std::cout << " ";
-            if (m[r][c] != 0)
+            if (m[r][c] != 0) {
                 std::cout << m[r][c] << " ";
-            else
+            } else {
                 std::cout << ". ";
+            }
         }
         std::cout << "\n";
     }
@@ -175,7 +176,7 @@ int main(int argc, char *argv[]) {
         for (int c = 1; c <= sq_size; c++) {
             for (int n = 1; n <= sq_size; n++) {
                 M.add_row(row_case_occ(r, c, n, blocks));
-                row_codes.push_back({r, c, n});
+                row_codes.emplace_back(r, c, n);
             }
         }
     }
@@ -186,7 +187,7 @@ int main(int argc, char *argv[]) {
                 auto row = row_case_occ(r, c, matrix[r - 1][c - 1], blocks);
                 row.push_back(col_ranks[{'e', nb_hint, 0}]);
                 M.add_row(row);
-                row_codes.push_back({r, c, matrix[r - 1][c - 1]});
+                row_codes.emplace_back(r, c, matrix[r - 1][c - 1]);
                 nb_hint++;
             }
         }

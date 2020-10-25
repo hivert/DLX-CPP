@@ -16,6 +16,9 @@
 #ifndef _UTILS_HPP
 #define _UTILS_HPP
 
+#include <cstddef>     // size_t
+#include <functional>  // hash
+
 namespace std {
 namespace {
 
@@ -24,7 +27,7 @@ namespace {
 //     and handles duplicates.
 // See Mike Seymour in magic-numbers-in-boosthash-combine:
 //     https://stackoverflow.com/questions/4948780
-template <class T> inline void hash_combine(std::size_t &seed, T const &v) {
+template <class T> inline void hash_combine(size_t &seed, T const &v) {
     seed ^= hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 

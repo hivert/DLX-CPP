@@ -16,13 +16,16 @@
 // A class for block diagram with zones such as (Generalized) Sudokus or
 // Tectonics.
 
+#ifndef BLOCK_DIAGRAM_HPP_
+#define BLOCK_DIAGRAM_HPP_
+
 #include <iostream>
 #include <string>
 #include <vector>
 
 class BlockDiagram {
   public:
-    BlockDiagram(size_t height, size_t width);
+    BlockDiagram(size_t h, size_t w);
 
     size_t get_width() const { return width; }
     size_t get_height() const { return height; }
@@ -46,3 +49,5 @@ class BlockDiagram {
     size_t height, width;
     std::vector<std::vector<int>> blocks, contents;
 };
+
+#endif  // BLOCK_DIAGRAM_HPP_

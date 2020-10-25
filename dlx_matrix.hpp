@@ -41,6 +41,8 @@ class DLXMatrix {
     };
 
   public:
+
+    DLXMatrix() = delete;
     explicit DLXMatrix(int nb_col);
     DLXMatrix(int nb_col, const std::vector<std::vector<int>> &);
     DLXMatrix(const DLXMatrix &);
@@ -51,9 +53,9 @@ class DLXMatrix {
 
     void check_sizes() const;
 
-    int add_row(const std::vector<int> &row) { return add_row_sparse(row); }
-    int add_row_sparse(const std::vector<int> &row);
-    int add_row_dense(const std::vector<bool> &row);
+    int add_row(const std::vector<int> &r) { return add_row_sparse(r); }
+    int add_row_sparse(const std::vector<int> &r);
+    int add_row_dense(const std::vector<bool> &r);
     std::vector<int> row_sparse(size_t i) const;
     std::vector<bool> row_dense(size_t i) const;
 
@@ -73,22 +75,21 @@ class DLXMatrix {
     int nb_choices, nb_dances;
 
     DLXMatrix permuted_columns(const std::vector<int> &perm);
-    DLXMatrix permuted_inv_columns(const std::vector<int> &inv);
+    DLXMatrix permuted_inv_columns(const std::vector<int> &perm);
     DLXMatrix permuted_rows(const std::vector<int> &perm);
 
     friend std::ostream &operator<<(std::ostream &, const DLXMatrix &);
 
   protected:
-    DLXMatrix() = delete;
 
     Header *master() { return &heads[0]; }
     const Header *master() const { return &heads[0]; }
 
     Header *choose_min();
-    void cover(Header *h);
-    void uncover(Header *h);
-    void choose(Node *n);
-    void unchoose(Node *n);
+    void cover(Header *col);
+    void uncover(Header *col);
+    void choose(Node *row);
+    void unchoose(Node *row);
     void search_rec_internal(size_t, std::vector<std::vector<int>> &);
 
     static std::vector<int> row_sparse(const std::vector<Node> &);

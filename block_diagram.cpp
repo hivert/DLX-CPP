@@ -35,9 +35,10 @@ TEST_SUITE_BEGIN("[block_diagram]class BlockDiagram");
 
 std::istream &read_matrix_int(std::istream &in,
                               std::vector<std::vector<int>> &mat) {
-    for (auto &r : mat)
+    for (auto &r : mat) {
         for (auto &v : r)
             in >> v;
+    }
     return in;
 }
 std::istream &read_matrix_char(std::istream &in,
@@ -151,7 +152,7 @@ std::string BlockDiagram::to_string(std::vector<std::vector<int>> fill) const {
             } else {
                 std::string cont = std::to_string(fill[r][c]);
                 if (cont.size() < 3)
-                    cont = " " + cont;
+                    cont.insert(0, " ");
                 if (cont.size() < 3)
                     cont += " ";
                 res += cont;
