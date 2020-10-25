@@ -25,12 +25,12 @@
 
 #include "dlx_matrix.hpp"
 
-#include <algorithm>              // sort, transform, random_shuffle
-#include <functional>             // bind, equal_to, _2
-#include <iostream>               // cout, cin, ...
-#include <numeric>                // iota
-#include <stdexcept>              // out_of_range
-#include <vector>                 // vector
+#include <algorithm>   // sort, transform, random_shuffle
+#include <functional>  // bind, equal_to, _2
+#include <iostream>    // cout, cin, ...
+#include <numeric>     // iota
+#include <stdexcept>   // out_of_range
+#include <vector>      // vector
 
 namespace DLX_backtrack {
 
@@ -57,10 +57,9 @@ TEST_SUITE_BEGIN("[dlx_matrix]Errors");
 ///////////////////////////////////////
 
 struct size_mismatch_error : public std::runtime_error {
-    size_mismatch_error(std::string s, int i, int j) :
-        std::runtime_error("Wrong " + s + " size : " + std::to_string(i) +
-                           " (expecting " + std::to_string(j) + ")")
-        {}
+    size_mismatch_error(std::string s, int i, int j)
+        : std::runtime_error("Wrong " + s + " size : " + std::to_string(i) +
+                             " (expecting " + std::to_string(j) + ")") {}
 };
 
 ///////////////////////////////////////////
@@ -194,8 +193,7 @@ TEST_CASE("method row_sparse") {
     CHECK(M.row_sparse(2) == std::vector<int>({1, 2, 4}));
 }
 
-std::vector<bool>
-DLXMatrix::row_dense(const std::vector<Node> &row) const {
+std::vector<bool> DLXMatrix::row_dense(const std::vector<Node> &row) const {
     return row_to_dense(DLXMatrix::row_sparse(row));
 }
 std::vector<bool> DLXMatrix::row_dense(size_t i) const {
@@ -300,7 +298,8 @@ std::vector<int> DLXMatrix::row_to_sparse(const std::vector<bool> &row) const {
 TEST_CASE_FIXTURE(DLXMatrixFixture, "method row_to_sparse") {
     CHECK(M5_3.row_to_sparse({0, 1, 1, 0, 0}) == std::vector<int>({1, 2}));
     CHECK(M5_3.row_to_sparse({0, 1, 0, 1, 1}) == std::vector<int>({1, 3, 4}));
-    CHECK_THROWS_AS(M5_3.row_to_sparse({0, 1, 1, 0, 1, 1}), size_mismatch_error);
+    CHECK_THROWS_AS(M5_3.row_to_sparse({0, 1, 1, 0, 1, 1}),
+                    size_mismatch_error);
     CHECK_THROWS_AS(M5_3.row_to_sparse({0, 1, 1, 0}), size_mismatch_error);
 }
 
@@ -334,7 +333,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method add_row_dense") {
     CHECK(M5_3.add_row_dense({0, 0, 1, 1, 0}) == 3);
     CHECK(M5_3.row_sparse(3) == std::vector<int>({2, 3}));
     CHECK_THROWS_AS(M5_3.add_row_dense({0, 1, 1, 0}), size_mismatch_error);
-    CHECK_THROWS_AS(M5_3.add_row_dense({0, 1, 1, 0, 1, 0}), size_mismatch_error);
+    CHECK_THROWS_AS(M5_3.add_row_dense({0, 1, 1, 0, 1, 0}),
+                    size_mismatch_error);
 }
 
 bool DLXMatrix::is_solution(const std::vector<int> &sol) {
@@ -468,7 +468,6 @@ normalize_solutions(std::vector<std::vector<int>> sols) {
     std::sort(sols.begin(), sols.end());
     return sols;
 }
-
 TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_rec") {
     CHECK(normalize_solutions(M6_10.search_rec()) ==
           std::vector<std::vector<int>>(
