@@ -15,6 +15,13 @@ Example:
     |       |     3 |
     +---+---+---+---+
 """
+import cppyy
+std = cppyy.gbl.std
+vctb = std.vector[bool]
+vcti = std.vector[int]
+cppyy.include('./dlx_matrix.hpp')
+cppyy.load_library('./libdlx_matrix')
+DLX = cppyy.gbl.DLX_backtrack
 
 class TT(object):
     def __init__(self, blocks, hints):
@@ -238,6 +245,18 @@ class TT(object):
         assert(all(x in self.DLXcols for x in row))
         return tuple(int(cl in row) for cl in self.DLXcols)
 
+    def DLXrow2sparse(self, row):
+        r"""
+        sage: T = TT(["AAAB"], {(0,1) : 2})
+        sage: T.DLXrow2sparse(['c_0_1', 'bA_3'])
+        [1, 6]
+        sage: T.DLXrow2sparse(['c_0_3', 'bB_1', 'V_1_A0x2_B0x3'])
+        [3, 7, 8]
+        sage: T.DLXrow2sparse(['c_0_1', 'bA_2', 'h_0'])
+        [1, 5, 9]
+        """
+        return [self.DLXcols.index(cl) for cl in row]
+
     @lazy_attribute
     def DLXrows(self):
         res = []
@@ -296,6 +315,53 @@ class TT(object):
             print(' '.join(r), file=outfile)
         outfile.close()
 
+    def call_solver(self):
+        r"""
+        sage: T = TT(["AAAB"], {(0, 0) : 1})
+        sage: S = T.call_solver()
+        More than one solution
+        sage: print(T.to_string(S))
+        +---+---+---+---+
+        | 1   2   3 | 1 |
+        +---+---+---+---+
+
+        sage: S = T28_151.call_solver()
+        sage: print(T28_151.to_string(S))
+        +---+---+---+---+---+---+---+---+---+
+        | 3 | 1   3   2 | 1   2 | 1   2   5 |
+        +   +---+---+---+   +---+---+   +   +
+        | 4   2 | 4 | 5   4 | 5   4 | 3   4 |
+        +   +   +   +   +---+   +   +---+---+
+        | 1   5 | 1 | 3 | 2 | 3   1   2 | 1 |
+        +---+---+   +---+   +---+---+---+   +
+        | 2 | 3   2 | 4   5 | 4   5 | 4   5 |
+        +   +   +---+   +---+   +   +   +   +
+        | 1 | 5 | 1   3 | 1   3   2 | 3   2 |
+        +   +---+---+---+---+---+---+---+---+
+        | 4 | 3   4   5 | 2   5 | 1   5 | 1 |
+        +   +   +   +---+   +   +   +   +---+
+        | 5 | 1   2 | 3   1   4 | 3   2 | 3 |
+        +   +---+---+---+---+---+---+   +   +
+        | 3 | 4   5 | 4   2   5   1 | 4 | 1 |
+        +---+   +   +   +---+---+---+---+   +
+        | 1 | 2   1 | 3 | 1 | 4   2   3 | 5 |
+        +---+   +---+---+   +---+   +---+   +
+        | 5 | 3 | 5   4   2   3 | 1 | 4   2 |
+        +   +---+---+---+---+---+---+---+---+
+        | 2   4   1   3 | 1   4   2   3   5 |
+        +---+---+---+---+---+---+---+---+---+
+        """
+        Mrows, L = self.DLXrows
+        DLXM = DLX.DLXMatrix(len(self.DLXcols))
+        for row in Mrows:
+            DLXM.add_row_sparse(self.DLXrow2sparse(row))
+        assert(DLXM.search_iter())
+        sol = list(DLXM.get_solution())
+        if DLXM.search_iter():
+            print("More than one solution")
+        res = [L[i] for i in sol if L[i] is not None]
+        return {(r, c) : l for (r, c, l, _) in res}
+
     def call_external(self, opts = ["-2"]):
         r"""
         sage: T = TT(["AAAB"], {(0, 0) : 1})
@@ -303,7 +369,7 @@ class TT(object):
         Number of solutions: 2
         Number of choices: 6, Number of dances: 16
         Timings: parse = ... ns, solve = ... ns, output = ... ns, total = ... ns
-        sage: for s in S: print(T.to_string(s))
+        sage: for s in S[1]: print(T.to_string(s))
         +---+---+---+---+
         | 1   2   3 | 1 |
         +---+---+---+---+
@@ -315,7 +381,7 @@ class TT(object):
         Number of solutions: 1
         Number of choices: 1723, Number of dances: 12242
         Timings: parse = ... ns, solve = ... ns, output = ... ns, total = ... ns
-        sage: print(T28_151.to_string(S[0]))
+        sage: print(T28_151.to_string(S[1][0]))
         +---+---+---+---+---+---+---+---+---+
         | 3 | 1   3   2 | 1   2 | 1   2   5 |
         +   +---+---+---+   +---+---+   +   +
@@ -341,7 +407,7 @@ class TT(object):
         +---+---+---+---+---+---+---+---+---+
         """
         from subprocess import Popen, PIPE
-        pipe = Popen(['../dancing'] + opts, stdout=PIPE, stdin=PIPE)
+        pipe = Popen(['./dancing'] + opts, stdout=PIPE, stdin=PIPE)
         pipe.stdin.write((' '.join(self.DLXcols)+'\n').encode())
         for r in self.DLXrows[0]:
             pipe.stdin.write((' '.join(r)+'\n').encode())
@@ -484,8 +550,9 @@ class TT(object):
         r"""
         sage: Tes = TT(["AAAB", "CAAB", "CCBB", "CCDD", "EEDD"], {})
         sage: P, S = Tes.rand_sol()
+        ...
         """
-        nsol, Sols = self.call_external(["-R", "-f"])
+        nsol, Sols = self.call_external(["-r", "-f"])
         if nsol == 0:
             raise ValueError
         Sol = Sols[0]
