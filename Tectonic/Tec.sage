@@ -320,12 +320,14 @@ class TT(object):
         sage: T = TT(["AAAB"], {(0, 0) : 1})
         sage: S = T.call_solver()
         More than one solution
+        Number of choices: 6, Number of dances: 16
         sage: print(T.to_string(S))
         +---+---+---+---+
         | 1   2   3 | 1 |
         +---+---+---+---+
 
         sage: S = T28_151.call_solver()
+        Number of choices: 1723, Number of dances: 12242
         sage: print(T28_151.to_string(S))
         +---+---+---+---+---+---+---+---+---+
         | 3 | 1   3   2 | 1   2 | 1   2   5 |
@@ -359,6 +361,8 @@ class TT(object):
         sol = list(DLXM.get_solution())
         if DLXM.search_iter():
             print("More than one solution")
+        print(f"Number of choices: {DLXM.nb_choices}, "
+              f"Number of dances: {DLXM.nb_dances}")
         res = [L[i] for i in sol if L[i] is not None]
         return {(r, c) : l for (r, c, l, _) in res}
 
@@ -570,7 +574,7 @@ class TT(object):
                 nhints = i
                 break
 
-        print("==================================== %i"%nhints)
+        print(f"==================================== {nhints}")
         i = 0
         hints = places[:nhints+1]
         while (i < len(hints)):
@@ -581,7 +585,7 @@ class TT(object):
             print(Tnew)
             nsol = Tnew.call_external(["-0"])[0]
             if nsol == 1:
-                print("Removed hints %i"%i)
+                print(f"Removed hints {i}")
                 hints = new_hints
             else:
                 i += 1
@@ -644,3 +648,13 @@ T26_96  = TT(["AABB",
               "DCEE",
               "DEEE"],
              {(0, 0) : 2, (0, 2) : 2, (2, 3) : 5, (4, 3): 5})
+
+T26_135 = TT(["AAABBBCCC",
+              "AABBDDCCE",
+              "FGGGDDDHE",
+              "FFGGIIHHJ",
+              "FKKIIIHHJ"],
+             {(0, 1) : 5, (0, 4) : 5, (0, 7) : 5,
+              (1, 5) : 4,
+              (2, 2) : 1,
+              (4, 4) : 4, (4, 7) : 5})
