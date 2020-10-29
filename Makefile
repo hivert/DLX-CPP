@@ -1,7 +1,7 @@
 SHELL = /bin/sh
-CFLAGS = -Wall -lrt $(DEBUG)
+CFLAGS = -Wall $(DEBUG)
 CXXFLAGS= -Wall -std=c++17 -g -O3
-CC = gcc
+
 
 MAIN_FILES = sudsol dlx_matrix_test block_diagram_test
 
