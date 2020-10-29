@@ -374,7 +374,10 @@ class TT(object):
             print(' '.join(r), file=outfile)
         outfile.close()
 
-    def call_solver(self):
+    def call_solver(self,
+                    print_stats = True,
+                    check_one_sol = True,
+                    all_sols = False):
         r"""
         sage: T = TT(["AAAB"], {(0, 0) : 1})
         sage: S = T.call_solver()
@@ -383,6 +386,23 @@ class TT(object):
         sage: print(T.to_string(S))
         +---+---+---+---+
         | 1   2   3 | 1 |
+        +---+---+---+---+
+
+        sage: T = TT(["AAAB"], {(0, 0) : 1})
+        sage: S = T.call_solver(print_stats=False, check_one_sol=False)
+        sage: print(T.to_string(S))
+        +---+---+---+---+
+        | 1   2   3 | 1 |
+        +---+---+---+---+
+
+        sage: T = TT(["AAAB"], {(0, 0) : 1})
+        sage: Ss = T.call_solver(print_stats=False, all_sols=True)
+        sage: for S in Ss: print(T.to_string(S))
+        +---+---+---+---+
+        | 1   2   3 | 1 |
+        +---+---+---+---+
+        +---+---+---+---+
+        | 1   3   2 | 1 |
         +---+---+---+---+
 
         sage: S = T28_151.call_solver()
@@ -411,19 +431,36 @@ class TT(object):
         +   +---+---+---+---+---+---+---+---+
         | 2   4   1   3 | 1   4   2   3   5 |
         +---+---+---+---+---+---+---+---+---+
+
+        sage: T = TT(["AA", "BB"], {})
+        sage: T.call_solver() is None
+        Number of choices: 2, Number of dances: 24
+        True
+
+        sage: T = TT(["AA", "BB"], {})
+        sage: T.call_solver(print_stats=False) is None
+        True
         """
         Mrows, L = self.DLXrows
+        def sol_from_DLX(sol):
+            res = [L[i] for i in sol if L[i] is not None]
+            return {(r, c) : l for (r, c, l, _) in res}
         DLXM = DLX.DLXMatrix(len(self.DLXcols))
         for row in Mrows:
             DLXM.add_row_sparse(self.DLXrow2sparse(row))
-        assert(DLXM.search_iter())
-        sol = list(DLXM.get_solution())
+        res = None
         if DLXM.search_iter():
-            print("More than one solution")
-        print(f"Number of choices: {DLXM.nb_choices}, "
-              f"Number of dances: {DLXM.nb_dances}")
-        res = [L[i] for i in sol if L[i] is not None]
-        return {(r, c) : l for (r, c, l, _) in res}
+            res = sol_from_DLX(DLXM.get_solution())
+            if all_sols:
+                res = [res]
+                while DLXM.search_iter():
+                    res.append(sol_from_DLX(DLXM.get_solution()))
+            elif check_one_sol and DLXM.search_iter():
+                print("More than one solution")
+        if print_stats:
+            print(f"Number of choices: {DLXM.nb_choices}, "
+                  f"Number of dances: {DLXM.nb_dances}")
+        return res
 
     def call_external(self, opts = ["-2"]):
         r"""
