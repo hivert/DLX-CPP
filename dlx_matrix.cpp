@@ -57,11 +57,7 @@ TEST_CASE("[dlx_matrix]inverse_perm") {
 TEST_SUITE_BEGIN("[dlx_matrix]Errors");
 ///////////////////////////////////////
 
-struct size_mismatch_error : public std::runtime_error {
-    size_mismatch_error(const std::string &s, int i, int j)
-        : std::runtime_error("Wrong " + s + " size : " + std::to_string(i) +
-                             " (expecting " + std::to_string(j) + ")") {}
-};
+    /// TODO
 
 ///////////////////////////////////////////
 TEST_SUITE_END();  // [dlx_matrix]Errors");
@@ -79,19 +75,23 @@ class DLXMatrixFixture {
         M1_1(1, {{0}}),
         M5_2(5, {{0, 1}, {2, 3, 4}}),
         M5_3(5, {{0, 1}, {2, 3, 4}, {1, 2, 4}}),
+        M5_3_Sec2(5, 3, {{0, 1}, {2}, {2, 3, 4}, {1, 2, 4}}),
         M6_10(6, { {0, 2}, {0, 1}, {1, 4}, {3}, {3, 4}, {5},
                    {1}, {0, 1, 2}, {2, 3, 4}, {1, 4, 5} }),
-        TestSample({empty0, empty1, empty5, M1_1, M5_2, M5_3, M6_10})
+        TestSample({empty0, empty1, empty5, M1_1, M5_2, M5_3, M5_3_Sec2, M6_10})
       {}
     // clang-format on
   protected:
-    DLXMatrix empty0, empty1, empty5, M1_1, M5_2, M5_3, M6_10;
+    DLXMatrix empty0, empty1, empty5, M1_1, M5_2, M5_3, M5_3_Sec2, M6_10;
     std::vector<DLXMatrix> TestSample;
 };
 
-DLXMatrix::DLXMatrix(int nb_col)
-    : nb_choices(0), nb_dances(0), heads(nb_col + 1), search_down(true) {
-    for (int i = 0; i <= nb_col; i++) {
+DLXMatrix::DLXMatrix(size_t nb_col, size_t sec_start)
+    : nb_primary(sec_start), heads(nb_col + 1), search_down(true),
+      nb_choices(0), nb_dances(0) {
+    if (nb_primary > nb_col)
+        throw size_mismatch_error("nb_primary", nb_primary, nb_col);
+    for (size_t i = 0; i <= nb_col; i++) {
         heads[i].size = 0;
         heads[i].col_id = i - 1;
         heads[i].node.row_id = -1;
@@ -100,10 +100,10 @@ DLXMatrix::DLXMatrix(int nb_col)
         heads[i].node.up = heads[i].node.down = &heads[i].node;
     }
     heads[nb_col].right = &heads[0];
-    for (int i = 0; i < nb_col; i++)
+    for (size_t i = 0; i < nb_col; i++)
         heads[i].right = &heads[i + 1];
     heads[0].left = &heads[nb_col];
-    for (int i = 1; i <= nb_col; i++)
+    for (size_t i = 1; i <= nb_col; i++)
         heads[i].left = &heads[i - 1];
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix(int nb_col)") {
@@ -113,8 +113,9 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix(int nb_col)") {
     CHECK(empty5.height() == 0);
 }
 
-DLXMatrix::DLXMatrix(int nb_col, const std::vector<std::vector<int>> &rows)
-    : DLXMatrix(nb_col) {
+DLXMatrix::DLXMatrix(size_t nb_col, size_t sec_start,
+                     const std::vector<std::vector<int>> &rows)
+    : DLXMatrix(nb_col, sec_start) {
     for (const auto &r : rows)
         add_row_sparse(r);
 }
@@ -132,7 +133,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture,
     }
 }
 
-DLXMatrix::DLXMatrix(const DLXMatrix &other) : DLXMatrix(other.width()) {
+DLXMatrix::DLXMatrix(const DLXMatrix &other)
+    : DLXMatrix(other.width(), other.nb_primary) {
     for (auto &row : other.rows)
         add_row_sparse(row_sparse(row));
     for (Node *n : other.work) {
@@ -157,6 +159,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture,
 }
 
 DLXMatrix &DLXMatrix::operator=(DLXMatrix other) {
+    nb_primary = other.nb_primary;
     std::swap(heads, other.heads);
     std::swap(rows, other.rows);
     std::swap(work, other.work);
@@ -209,7 +212,7 @@ TEST_CASE("method row_dense") {
 
 void DLXMatrix::check_sizes() const {
     for (Header *h = master()->right; h != master(); h = h->right) {
-        int irows = 0;
+        size_t irows = 0;
         for (Node *p = h->node.down; p != &h->node; irows++, p = p->down) {}
         if (h->size != irows)
             throw size_mismatch_error("column", h->size, irows);
@@ -345,8 +348,13 @@ bool DLXMatrix::is_solution(const std::vector<int> &sol) {
         std::transform(cols.begin(), cols.end(), row_dense(r).begin(),
                        cols.begin(), std::plus<>());
     }
-    return std::all_of(cols.begin(), cols.end(),
-                       std::bind(std::equal_to<>(), _1, 1));
+    for (size_t i=0; i < nb_primary; i++)
+        if (cols[i] != 1)
+            return false;
+    for (size_t i=nb_primary; i < width(); i++)
+        if (cols[i] > 1)
+            return false;
+    return true;
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "method is_solution") {
     SUBCASE("Empty 0x0 Matrix") {
@@ -379,6 +387,12 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method is_solution") {
         CHECK(M6_10.is_solution({6, 0, 5, 4}));
         CHECK_FALSE(M6_10.is_solution({0, 2, 4, 5, 6}));
         CHECK_FALSE(M6_10.is_solution({0, 5, 6}));
+    }
+    SUBCASE("M5_3_Sec2 Matrix (2 secondary columns") {
+        CHECK(M5_3_Sec2.is_solution({0, 1}));
+        CHECK(M5_3_Sec2.is_solution({0, 2}));
+        CHECK_FALSE(M5_3_Sec2.is_solution({0}));
+        CHECK_FALSE(M5_3_Sec2.is_solution({0, 3}));
     }
 }
 
@@ -422,8 +436,10 @@ void DLXMatrix::unchoose(Node *row) {
 
 DLXMatrix::Header *DLXMatrix::choose_min() {
     Header *choice = master()->right;
-    int min_size = choice->size;
-    for (Header *h = choice->right; h != master(); h = h->right) {
+    size_t min_size = choice->size;
+    for (Header *h = choice->right;
+         h != master() && h->col_id < nb_primary;
+         h = h->right) {
         if (h->size < min_size) {
             choice = h;
             min_size = h->size;
@@ -443,7 +459,8 @@ std::vector<std::vector<int>> DLXMatrix::search_rec(size_t max_sol) {
 }
 void DLXMatrix::search_rec_internal(size_t max_sol,
                                     std::vector<std::vector<int>> &res) {
-    if (master()->right == master()) {
+    if (master()->right == master() ||
+        master()->right->col_id >= nb_primary) {
         res.push_back(get_solution());
         return;
     }
@@ -478,6 +495,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_rec") {
           std::vector<std::vector<int>>({{0, 1}}));
     CHECK(normalize_solutions(M5_3.search_rec()) ==
           std::vector<std::vector<int>>({{0, 1}}));
+    CHECK(normalize_solutions(M5_3_Sec2.search_rec()) ==
+          std::vector<std::vector<int>>({{0, 1}, {0, 2}}));
     for (auto &M : TestSample) {
         for (auto &s : M.search_rec()) {
             CAPTURE(M);
@@ -493,7 +512,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_rec") {
 bool DLXMatrix::search_iter() {
     while (search_down || !work.empty()) {
         if (search_down) {  // going down the recursion
-            if (master()->right == master()) {
+            if (master()->right == master() ||
+                master()->right->col_id >= nb_primary) {
                 search_down = false;
                 return true;
             }
@@ -568,7 +588,7 @@ std::vector<int> DLXMatrix::get_solution() {
                    [](Node *n) -> int { return n->row_id; });
     return r;
 }
-TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_iter") {
+TEST_CASE_FIXTURE(DLXMatrixFixture, "method get_solution") {
     CHECK(M6_10.get_solution() == std::vector<int>({}));
     REQUIRE(M6_10.search_iter());
     CHECK(M6_10.get_solution() == std::vector<int>({5, 0, 2, 3}));

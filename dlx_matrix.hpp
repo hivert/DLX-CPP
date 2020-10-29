@@ -24,27 +24,46 @@
 
 namespace DLX_backtrack {
 
+struct size_mismatch_error : public std::runtime_error {
+    size_mismatch_error(const std::string &s, int i, int j)
+        : std::runtime_error("Wrong " + s + " size : " + std::to_string(i) +
+                             " (expecting " + std::to_string(j) + ")") {}
+};
+
 std::vector<int> inverse_perm(const std::vector<int> &perm);
 
 class DLXMatrix {
+  private:
+
     struct Header;
     struct Node {
-        int row_id;
+        size_t row_id;
         Node *left, *right, *up, *down;
         Header *head;
     };
 
     struct Header {
-        int col_id, size;
+        size_t col_id, size;
         Node node;
         Header *left, *right;
     };
 
+    size_t nb_primary;
+    std::vector<Header> heads;
+    std::vector<std::vector<Node>> rows;
+
+    std::vector<Node *> work;
+    bool search_down;
+
   public:
 
     DLXMatrix() = delete;
-    explicit DLXMatrix(int nb_col);
-    DLXMatrix(int nb_col, const std::vector<std::vector<int>> &);
+    explicit DLXMatrix(size_t nb_col) : DLXMatrix(nb_col, nb_col) {}
+    DLXMatrix(size_t nb_col, size_t nb_prim);
+    DLXMatrix(size_t nb_col, const std::vector<std::vector<int>> &rows)
+        : DLXMatrix(nb_col, nb_col, rows) {}
+    DLXMatrix(size_t nb_col, size_t nb_prim,
+              const std::vector<std::vector<int>> &);
     DLXMatrix(const DLXMatrix &);
     DLXMatrix &operator=(DLXMatrix other);
 
@@ -72,13 +91,13 @@ class DLXMatrix {
 
     void reset();
 
-    int nb_choices, nb_dances;
-
     DLXMatrix permuted_columns(const std::vector<int> &perm);
     DLXMatrix permuted_inv_columns(const std::vector<int> &perm);
     DLXMatrix permuted_rows(const std::vector<int> &perm);
 
     friend std::ostream &operator<<(std::ostream &, const DLXMatrix &);
+
+    int nb_choices, nb_dances;  // Computation statistics
 
   protected:
 
@@ -95,12 +114,6 @@ class DLXMatrix {
     static std::vector<int> row_sparse(const std::vector<Node> &);
     std::vector<bool> row_dense(const std::vector<Node> &) const;
     void print_solution(const std::vector<Node *> &) const;
-
-    std::vector<Header> heads;
-    std::vector<std::vector<Node>> rows;
-
-    std::vector<Node *> work;
-    bool search_down;
 };
 
 }  // namespace DLX_backtrack
