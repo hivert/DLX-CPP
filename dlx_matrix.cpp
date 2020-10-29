@@ -93,18 +93,20 @@ DLXMatrix::DLXMatrix(size_t nb_col, size_t sec_start)
         throw size_mismatch_error("nb_primary", nb_primary, nb_col);
     for (size_t i = 0; i <= nb_col; i++) {
         heads[i].size = 0;
-        heads[i].col_id = i - 1;
-        heads[i].node.row_id = -1;
         heads[i].node.head = &heads[i];
-        heads[i].node.left = heads[i].node.right = nullptr;  // unused
         heads[i].node.up = heads[i].node.down = &heads[i].node;
+        // heads[i].node.row_id = -1  // unused;
+        // heads[i].node.left = heads[i].node.right = nullptr;  // unused
     }
     heads[nb_col].right = &heads[0];
     for (size_t i = 0; i < nb_col; i++)
         heads[i].right = &heads[i + 1];
     heads[0].left = &heads[nb_col];
-    for (size_t i = 1; i <= nb_col; i++)
+    heads[0].col_id = std::numeric_limits<size_t>::max();  // sentinel
+    for (size_t i = 1; i <= nb_col; i++) {
+        heads[i].col_id = i - 1;
         heads[i].left = &heads[i - 1];
+    }
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix(int nb_col)") {
     CHECK(empty0.width() == 0);
@@ -437,9 +439,7 @@ void DLXMatrix::unchoose(Node *row) {
 DLXMatrix::Header *DLXMatrix::choose_min() {
     Header *choice = master()->right;
     size_t min_size = choice->size;
-    for (Header *h = choice->right;
-         h != master() && h->col_id < nb_primary;
-         h = h->right) {
+    for (Header *h = choice->right; h->col_id < nb_primary; h = h->right) {
         if (h->size < min_size) {
             choice = h;
             min_size = h->size;
@@ -459,8 +459,7 @@ std::vector<std::vector<int>> DLXMatrix::search_rec(size_t max_sol) {
 }
 void DLXMatrix::search_rec_internal(size_t max_sol,
                                     std::vector<std::vector<int>> &res) {
-    if (master()->right == master() ||
-        master()->right->col_id >= nb_primary) {
+    if (master()->right->col_id >= nb_primary) {
         res.push_back(get_solution());
         return;
     }
@@ -512,8 +511,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_rec") {
 bool DLXMatrix::search_iter() {
     while (search_down || !work.empty()) {
         if (search_down) {  // going down the recursion
-            if (master()->right == master() ||
-                master()->right->col_id >= nb_primary) {
+            if (master()->right->col_id >= nb_primary) {
                 search_down = false;
                 return true;
             }
