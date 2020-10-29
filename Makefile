@@ -13,8 +13,6 @@ dlx_matrix.o: dlx_matrix.cpp dlx_matrix.hpp
 
 libdlx_matrix.o: CXXFLAGS += -fPIC
 libdlx_matrix.o: libdlx_matrix.cpp dlx_matrix.hpp
-
-libdlx_matrix.so: CXXFLAGS += -fPIC
 libdlx_matrix.so: libdlx_matrix.o
 	$(LINK.c) -shared $^ -o $@
 
