@@ -101,6 +101,17 @@ class TT(object):
     @lazy_attribute
     def DLXcols(self):
         r"""
+        sage: TT(["AAAB"], {(0,1) : 2}).DLXcols
+        ['c_0_0',
+         'c_0_1',
+         'c_0_2',
+         'c_0_3',
+         'bA_1',
+         'bA_2',
+         'bA_3',
+         'bB_1',
+         'V_1_A0x2_B0x3',
+         'h_0']
         sage: len(TT(["AAAB", "CAAB", "CCBB", "CCDD", "EEDD"], {}).DLXcols)
         146
         """
@@ -114,6 +125,26 @@ class TT(object):
         res += self.DLXoverlap_cols()
         for i in range(len(self._hints)):
             res.append("h_%i"%i)
+        return res
+
+    @lazy_attribute
+    def DLXcols_index(self):
+        r"""
+        sage: sorted(TT(["AAAB"], {(0,1) : 2}).DLXcols_index.items())
+        [('V_1_A0x2_B0x3', 8),
+         ('bA_1', 4),
+         ('bA_2', 5),
+         ('bA_3', 6),
+         ('bB_1', 7),
+         ('c_0_0', 0),
+         ('c_0_1', 1),
+         ('c_0_2', 2),
+         ('c_0_3', 3),
+         ('h_0', 9)]
+        """
+        res = dict()
+        for i, c in enumerate(self.DLXcols):
+            res[c] = i
         return res
 
     def block(self, r, c, default=None):
@@ -255,10 +286,38 @@ class TT(object):
         sage: T.DLXrow2sparse(['c_0_1', 'bA_2', 'h_0'])
         [1, 5, 9]
         """
-        return [self.DLXcols.index(cl) for cl in row]
+        return [self.DLXcols_index[cl] for cl in row]
 
     @lazy_attribute
     def DLXrows(self):
+        r"""
+        sage: T = TT(["AAAB"], {(0,1) : 2})
+        sage: T.DLXrows
+        ([['c_0_0', 'bA_1'],
+          ['c_0_0', 'bA_2'],
+          ['c_0_0', 'bA_3'],
+          ['c_0_1', 'bA_1'],
+          ['c_0_1', 'bA_2'],
+          ['c_0_1', 'bA_3'],
+          ['c_0_2', 'bA_1', 'V_1_A0x2_B0x3'],
+          ['c_0_2', 'bA_2'],
+          ['c_0_2', 'bA_3'],
+          ['c_0_3', 'bB_1', 'V_1_A0x2_B0x3'],
+          ['c_0_1', 'bA_2', 'h_0'],
+          ['V_1_A0x2_B0x3']],
+         [(0, 0, 1, None),
+          (0, 0, 2, None),
+          (0, 0, 3, None),
+          (0, 1, 1, None),
+          (0, 1, 2, None),
+          (0, 1, 3, None),
+          (0, 2, 1, None),
+          (0, 2, 2, None),
+          (0, 2, 3, None),
+          (0, 3, 1, None),
+          (0, 1, 2, 0),
+          None])
+        """
         res = []
         order = []
         for r in range(self._nrows):
