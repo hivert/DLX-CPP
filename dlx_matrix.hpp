@@ -30,14 +30,7 @@ struct size_mismatch_error : public std::runtime_error {
                            " (expecting " + std::to_string(expected) + ")") {}
 };
 
-struct out_of_bound_error : public std::runtime_error {
-  out_of_bound_error(const std::string &s, size_t bound, size_t i)
-      : std::runtime_error("Value " + s + " too large : " + std::to_string(i) +
-                           " (at most " + std::to_string(bound) + ")") {}
-};
-
 void check_size(const std::string &s, size_t expected, size_t sz);
-void check_bound(const std::string &s, size_t bound, size_t i);
 
 std::vector<size_t> inverse_perm(const std::vector<size_t> &perm);
 

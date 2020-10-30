@@ -45,9 +45,6 @@ TEST_SUITE_BEGIN("[dlx_matrix]Errors");
 void check_size(const std::string &s, size_t expected, size_t sz) {
   if (sz != expected) throw size_mismatch_error(s, expected, sz);
 }
-void check_bound(const std::string &s, size_t bound, size_t i) {
-  if (i > bound) throw out_of_bound_error(s, bound, i);
-}
 
 TEST_CASE("[dlx_matrix]size_mismatch_error") {
   CHECK_THROWS_AS(throw size_mismatch_error("bla", 2, 3), size_mismatch_error);
@@ -55,16 +52,6 @@ TEST_CASE("[dlx_matrix]size_mismatch_error") {
 TEST_CASE("[dlx_matrix]check_size") {
   CHECK_NOTHROW(check_size("bla", 2, 2));
   CHECK_THROWS_AS(check_size("bla", 2, 3), size_mismatch_error);
-}
-
-TEST_CASE("[dlx_matrix]out_of_bound_error") {
-  CHECK_THROWS_AS(throw out_of_bound_error("bla", 2, 3), out_of_bound_error);
-}
-TEST_CASE("[dlx_matrix]check_bound") {
-  CHECK_NOTHROW(check_bound("bla", 2, 2));
-  CHECK_NOTHROW(check_bound("bla", 3, 2));
-  CHECK_NOTHROW(check_bound("bla", 3, 0));
-  CHECK_THROWS_AS(check_bound("bla", 2, 3), out_of_bound_error);
 }
 
 ///////////////////////////////////////////
@@ -133,12 +120,11 @@ class DLXMatrixFixture {
 };
 
 DLXMatrix::DLXMatrix(size_t nb_col, size_t nb_primary)
-    : nb_primary_(nb_primary),
+    : nb_primary_(std::min(nb_col, nb_primary)),
       heads_(nb_col + 1),
       search_down_(true),
       nb_choices(0),
       nb_dances(0) {
-  check_bound("nb_primary", nb_col, nb_primary);
   for (size_t i = 0; i <= nb_col; i++) {
     heads_[i].size = 0;
     heads_[i].node.up = heads_[i].node.down = &heads_[i].node;
@@ -164,11 +150,17 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix(size_t)") {
 }
 TEST_CASE("[dlx_matrix]DLXMatrix(size_t, size_t)") {
   CHECK_NOTHROW(DLXMatrix(0, 0));
-  CHECK_THROWS_AS(DLXMatrix(0, 1), out_of_bound_error);
-  CHECK_NOTHROW(DLXMatrix(5, 0));
+  DLXMatrix M00(0, 0);
+  CHECK(M00.nb_cols() == 0);
+  CHECK(M00.nb_primary() == 0);
   CHECK_NOTHROW(DLXMatrix(5, 2));
-  CHECK_NOTHROW(DLXMatrix(5, 5));
-  CHECK_THROWS_AS(DLXMatrix(5, 6), out_of_bound_error);
+  DLXMatrix M52(5, 2);
+  CHECK(M52.nb_cols() == 5);
+  CHECK(M52.nb_primary() == 2);
+  CHECK_NOTHROW(DLXMatrix(5, 6));
+  DLXMatrix M56(5, 6);
+  CHECK(M56.nb_cols() == 5);
+  CHECK(M56.nb_primary() == 5);
 }
 
 DLXMatrix::DLXMatrix(size_t nb_col, size_t nb_primary, const Vect2D &rows)
@@ -193,9 +185,6 @@ TEST_CASE("[dlx_matrix]DLXMatrix(size_t, size_t, const Vect2D &))") {
     CHECK_NOTHROW(DLXMatrix(0, 0, {}));
     CHECK_NOTHROW(DLXMatrix(1, 1, {{0}}));
     CHECK_NOTHROW(DLXMatrix(3, 2, {{0}, {1, 2}}));
-  }
-  SUBCASE("nb_primary out of bound") {
-    CHECK_THROWS_AS(DLXMatrix(0, 1, {}), out_of_bound_error);
   }
   SUBCASE("Row out of range") {
     CHECK_THROWS_AS(DLXMatrix(5, 4, {{0, 1}, {2, 3, 5}}), std::out_of_range);
