@@ -54,16 +54,16 @@ std::istream &read_matrix_char(std::istream &in,
 }
 
 BlockDiagram::BlockDiagram(size_t h, size_t w)
-    : height(h), width(w), blocks(h, std::vector<int>(w)),
-      contents(h, std::vector<int>(w)) {}
+    : nb_rows_(h), nb_cols_(w), blocks_(h, std::vector<int>(w)),
+      contents_(h, std::vector<int>(w)) {}
 TEST_CASE("BlockDiagram(size_t, size_t)") {
     BlockDiagram Blk(5, 4);
-    CHECK(Blk.get_height() == 5);
-    CHECK(Blk.get_width() == 4);
+    CHECK(Blk.nb_rows() == 5);
+    CHECK(Blk.nb_cols() == 4);
 }
 
 std::istream &BlockDiagram::read_contents_int(std::istream &in) {
-    return read_matrix_int(in, contents);
+    return read_matrix_int(in, contents_);
 }
 TEST_CASE("read_contents_int") {
     BlockDiagram Blk(2, 3);
@@ -76,7 +76,7 @@ TEST_CASE("read_contents_int") {
 }
 
 std::istream &BlockDiagram::read_contents_char(std::istream &in) {
-    return read_matrix_char(in, contents);
+    return read_matrix_char(in, contents_);
 }
 TEST_CASE("read_contents_char") {
     BlockDiagram Blk(2, 3);
@@ -90,7 +90,7 @@ TEST_CASE("read_contents_char") {
 }
 
 std::istream &BlockDiagram::read_blocks_int(std::istream &in) {
-    return read_matrix_int(in, blocks);
+    return read_matrix_int(in, blocks_);
 }
 TEST_CASE("read_blocks_int") {
     SUBCASE("Block 2x3") {
@@ -115,7 +115,7 @@ TEST_CASE("read_blocks_int") {
 }
 
 std::istream &BlockDiagram::read_blocks_char(std::istream &in) {
-    return read_matrix_char(in, blocks);
+    return read_matrix_char(in, blocks_);
 }
 TEST_CASE("read_blocks_char") {
     SUBCASE("Block 2x3") {
@@ -141,12 +141,12 @@ TEST_CASE("read_blocks_char") {
 
 std::string BlockDiagram::to_string(std::vector<std::vector<int>> fill) const {
     std::string res = "+";
-    for (size_t c = 0; c < width; ++c)
+    for (size_t c = 0; c < nb_cols_; ++c)
         res += "---+";
     res += "\n";
-    for (size_t r = 0; r < height; ++r) {
+    for (size_t r = 0; r < nb_rows_; ++r) {
         res += "|";
-        for (size_t c = 0; c < width; ++c) {
+        for (size_t c = 0; c < nb_cols_; ++c) {
             if (fill[r][c] == 0) {
                 res += "   ";
             } else {
@@ -158,12 +158,12 @@ std::string BlockDiagram::to_string(std::vector<std::vector<int>> fill) const {
                 res += cont;
             }
             res +=
-                c + 1 < width && blocks[r][c] == blocks[r][c + 1] ? " " : "|";
+                c + 1 < nb_cols_ && blocks_[r][c] == blocks_[r][c + 1] ? " " : "|";
         }
         res += "\n+";
-        for (size_t c = 0; c < width; ++c) {
-            res += r + 1 < height && blocks[r][c] == blocks[r + 1][c] ? "   +"
-                                                                      : "---+";
+        for (size_t c = 0; c < nb_cols_; ++c) {
+            res += r + 1 < nb_rows_ && blocks_[r][c] == blocks_[r + 1][c] ? "   +"
+                                                                          : "---+";
         }
         res += "\n";
     }
