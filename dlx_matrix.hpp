@@ -40,7 +40,7 @@ struct out_of_bound_error : public std::runtime_error {
 void check_size(const std::string &s, size_t expected, size_t sz);
 void check_bound(const std::string &s, size_t bound, size_t i);
 
-std::vector<int> inverse_perm(const std::vector<int> &perm);
+std::vector<size_t> inverse_perm(const std::vector<size_t> &perm);
 
 /////////////////
 class DLXMatrix {
@@ -66,47 +66,52 @@ class DLXMatrix {
     bool search_down;
 
   public:
-    DLXMatrix() = delete;
+    using Vect1D = std::vector<size_t>;
+    using Vect2D = std::vector<Vect1D>;
+
+    DLXMatrix() : DLXMatrix(0) {}
     explicit DLXMatrix(size_t nb_col) : DLXMatrix(nb_col, nb_col) {}
     DLXMatrix(size_t nb_col, size_t nb_prim);
-    DLXMatrix(size_t nb_col, const std::vector<std::vector<int>> &rows)
+    DLXMatrix(size_t nb_col, const Vect2D &rows)
         : DLXMatrix(nb_col, nb_col, rows) {}
-    DLXMatrix(size_t nb_col, size_t nb_prim,
-              const std::vector<std::vector<int>> &);
+    DLXMatrix(size_t nb_col, size_t nb_prim, const Vect2D &rows);
     DLXMatrix(const DLXMatrix &);
-    DLXMatrix &operator=(DLXMatrix other);
+    DLXMatrix &operator=(const DLXMatrix &other);
+    DLXMatrix(DLXMatrix &&) = default;
+    DLXMatrix &operator=(DLXMatrix &&other) = default;
+    ~DLXMatrix() = default;
 
     size_t width() const { return heads.size() - 1; }
     size_t height() const { return rows.size(); }
 
     void check_sizes() const;
 
-    int add_row(const std::vector<int> &r) { return add_row_sparse(r); }
-    int add_row_sparse(const std::vector<int> &r);
-    int add_row_dense(const std::vector<bool> &r);
-    std::vector<int> row_sparse(size_t i) const;
+    size_t add_row(const Vect1D &r) { return add_row_sparse(r); }
+    size_t add_row_sparse(const Vect1D &r);
+    size_t add_row_dense(const std::vector<bool> &r);
+    Vect1D row_sparse(size_t i) const;
     std::vector<bool> row_dense(size_t i) const;
 
-    std::vector<int> row_to_sparse(const std::vector<bool> &row) const;
-    std::vector<bool> row_to_dense(std::vector<int> row) const;
+    Vect1D row_to_sparse(const std::vector<bool> &row) const;
+    std::vector<bool> row_to_dense(Vect1D row) const;
 
-    std::vector<std::vector<int>> search_rec(size_t max_sol = SIZE_MAX);
+    Vect2D search_rec(size_t max_sol = SIZE_MAX);
     bool search_iter();
-    bool search_iter(std::vector<int> &);
-    std::vector<int> get_solution();
-    bool search_random(std::vector<int> &);
+    bool search_iter(Vect1D &);
+    Vect1D get_solution();
+    bool search_random(Vect1D &);
 
-    bool is_solution(const std::vector<int> &);
+    bool is_solution(const Vect1D &);
 
     void reset();
 
-    DLXMatrix permuted_columns(const std::vector<int> &perm);
-    DLXMatrix permuted_inv_columns(const std::vector<int> &perm);
-    DLXMatrix permuted_rows(const std::vector<int> &perm);
+    DLXMatrix permuted_columns(const Vect1D &perm);
+    DLXMatrix permuted_inv_columns(const Vect1D &perm);
+    DLXMatrix permuted_rows(const Vect1D &perm);
 
     friend std::ostream &operator<<(std::ostream &, const DLXMatrix &);
 
-    int nb_choices, nb_dances;  // Computation statistics
+    size_t nb_choices, nb_dances;  // Computation statistics
 
   protected:
     Header *master() { return &heads[0]; }
@@ -117,16 +122,28 @@ class DLXMatrix {
     void uncover(Header *col);
     void choose(Node *row);
     void unchoose(Node *row);
-    void search_rec_internal(size_t, std::vector<std::vector<int>> &);
+    void search_rec_internal(size_t, Vect2D &);
 
-    static std::vector<int> row_sparse(const std::vector<Node> &);
+    static Vect1D row_sparse(const std::vector<Node> &);
     std::vector<bool> row_dense(const std::vector<Node> &) const;
     void print_solution(const std::vector<Node *> &) const;
 };
 
+static_assert(std::is_move_constructible<DLXMatrix>::value);
+static_assert(std::is_move_assignable<DLXMatrix>::value);
+
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const std::vector<T> &v);
+std::ostream &operator<<(std::ostream &out, const DLXMatrix &M);
 
 }  // namespace DLX_backtrack
+
+namespace std {
+
+inline ostream &operator<<(ostream &out, const DLX_backtrack::DLXMatrix &M) {
+    return DLX_backtrack::operator<<(out, M);
+}
+
+}  // namespace std
 
 #endif  // DLX_MATRIX_HPP_

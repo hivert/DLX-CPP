@@ -32,11 +32,11 @@
 namespace cron = std::chrono;
 
 using col_type = std::tuple<char, int, int>;
-using SQMatrix = std::vector<std::vector<int>>;
+using SQMatrix = std::vector<std::vector<size_t>>;
 
 SQMatrix blocks, matrix;
 
-int row_size, col_size, sq_size, nb_hint;
+size_t row_size, col_size, sq_size, nb_hint;
 std::vector<col_type> col_names;
 std::vector<std::tuple<int, int, int>> row_codes;
 std::unordered_map<col_type, size_t> col_ranks;
@@ -46,8 +46,8 @@ void new_col(col_type name) {
     col_names.push_back(name);
 }
 
-std::vector<int> row_case_occ(int row, int col, int nb, SQMatrix &blocks) {
-    std::vector<int> res;
+std::vector<size_t> row_case_occ(int row, int col, int nb, SQMatrix &blocks) {
+    std::vector<size_t> res;
     res.push_back(col_ranks[{'r', row, nb}]);
     res.push_back(col_ranks[{'c', col, nb}]);
     res.push_back(col_ranks[{'s', row, col}]);
@@ -56,11 +56,11 @@ std::vector<int> row_case_occ(int row, int col, int nb, SQMatrix &blocks) {
 }
 
 void cout_mat(const SQMatrix &m) {
-    for (int r = 0; r < sq_size; r++) {
+    for (size_t r = 0; r < sq_size; r++) {
         if ((row_size != 0) && (r % row_size == 0))
             std::cout << "\n";
         std::cout << "  ";
-        for (int c = 0; c < sq_size; c++) {
+        for (size_t c = 0; c < sq_size; c++) {
             if ((col_size != 0) && (c % col_size == 0))
                 std::cout << " ";
             if (m[r][c] != 0) {
@@ -97,24 +97,24 @@ void read_sudoku(std::istream &in) {
     }
 
     // Dynamic allocation of the matrices.
-    const std::vector<int> empty_row(sq_size);
+    const std::vector<size_t> empty_row(sq_size);
     blocks.resize(sq_size, empty_row);
     matrix.resize(sq_size, empty_row);
 
     if (type == 's') {  // Standard block structure
-        for (int r = 0; r < sq_size; r++)
-            for (int c = 0; c < sq_size; c++)
+        for (size_t r = 0; r < sq_size; r++)
+            for (size_t c = 0; c < sq_size; c++)
                 blocks[r][c] = c / col_size + row_size * (r / row_size) + 1;
     } else {  // Generalized block structure
-        for (int r = 0; r < sq_size; r++)
-            for (int c = 0; c < sq_size; c++)
+        for (size_t r = 0; r < sq_size; r++)
+            for (size_t c = 0; c < sq_size; c++)
                 in >> blocks[r][c];
     }
 
     // Hint of the problem statement
     nb_hint = 0;
-    for (int r = 0; r < sq_size; r++) {
-        for (int c = 0; c < sq_size; c++) {
+    for (size_t r = 0; r < sq_size; r++) {
+        for (size_t c = 0; c < sq_size; c++) {
             char ch = in.peek();
             while (ch == ' ' or ch == '\n') {
                 in.ignore();
@@ -154,35 +154,35 @@ int main(int argc, char *argv[]) {
     }
 
     auto tencode = std::chrono::high_resolution_clock::now();
-    for (int i = 1; i <= sq_size; i++)
-        for (int j = 1; j <= sq_size; j++)
+    for (size_t i = 1; i <= sq_size; i++)
+        for (size_t j = 1; j <= sq_size; j++)
             new_col({'s', i, j});  // Square i,j occupied
-    for (int i = 1; i <= sq_size; i++)
-        for (int j = 1; j <= sq_size; j++)
+    for (size_t i = 1; i <= sq_size; i++)
+        for (size_t j = 1; j <= sq_size; j++)
             new_col({'b', i, j});  // Block i occupied by j
-    for (int i = 1; i <= sq_size; i++)
-        for (int j = 1; j <= sq_size; j++)
+    for (size_t i = 1; i <= sq_size; i++)
+        for (size_t j = 1; j <= sq_size; j++)
             new_col({'r', i, j});  // Row i occupied by j
-    for (int i = 1; i <= sq_size; i++)
-        for (int j = 1; j <= sq_size; j++)
+    for (size_t i = 1; i <= sq_size; i++)
+        for (size_t j = 1; j <= sq_size; j++)
             new_col({'c', i, j});  // Col i occupied by j
-    for (int i = 0; i < nb_hint; i++)
+    for (size_t i = 0; i < nb_hint; i++)
         new_col({'e', i, 0});
 
     DLX_backtrack::DLXMatrix M(col_names.size());
 
     // Rules of the Sudoku game
-    for (int r = 1; r <= sq_size; r++) {
-        for (int c = 1; c <= sq_size; c++) {
-            for (int n = 1; n <= sq_size; n++) {
+    for (size_t r = 1; r <= sq_size; r++) {
+        for (size_t c = 1; c <= sq_size; c++) {
+            for (size_t n = 1; n <= sq_size; n++) {
                 M.add_row(row_case_occ(r, c, n, blocks));
                 row_codes.emplace_back(r, c, n);
             }
         }
     }
     nb_hint = 0;
-    for (int r = 1; r <= sq_size; r++) {
-        for (int c = 1; c <= sq_size; c++) {
+    for (size_t r = 1; r <= sq_size; r++) {
+        for (size_t c = 1; c <= sq_size; c++) {
             if (matrix[r - 1][c - 1] != 0) {
                 auto row = row_case_occ(r, c, matrix[r - 1][c - 1], blocks);
                 row.push_back(col_ranks[{'e', nb_hint, 0}]);
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
 
     auto tcompute = std::chrono::high_resolution_clock::now();
 
-    std::vector<int> soldance;
+    std::vector<size_t> soldance;
     if (!M.search_iter(soldance)) {
         std::cout << "No solution found !" << std::endl;
         exit(EXIT_FAILURE);
@@ -204,8 +204,8 @@ int main(int argc, char *argv[]) {
         std::cout << "More than one solution found !" << std::endl;
         exit(EXIT_FAILURE);
     }
-    SQMatrix solution(sq_size, std::vector<int>(sq_size));
-    for (int rind : soldance) {
+    SQMatrix solution(sq_size, std::vector<size_t>(sq_size));
+    for (size_t rind : soldance) {
         auto [r, c, n] = row_codes[rind];
         solution[r - 1][c - 1] = n;
     }
