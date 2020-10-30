@@ -58,12 +58,12 @@ class DLXMatrix {
         Header *left, *right;
     };
 
-    size_t nb_primary;
-    std::vector<Header> heads;
-    std::vector<std::vector<Node>> rows;
+    size_t nb_primary_;
+    std::vector<Header> heads_;
+    std::vector<std::vector<Node>> rows_;
 
-    std::vector<Node *> work;
-    bool search_down;
+    std::vector<Node *> work_;
+    bool search_down_;
 
   public:
     using Vect1D = std::vector<size_t>;
@@ -71,18 +71,19 @@ class DLXMatrix {
 
     DLXMatrix() : DLXMatrix(0) {}
     explicit DLXMatrix(size_t nb_col) : DLXMatrix(nb_col, nb_col) {}
-    DLXMatrix(size_t nb_col, size_t nb_prim);
+    DLXMatrix(size_t nb_col, size_t nb_primary);
     DLXMatrix(size_t nb_col, const Vect2D &rows)
         : DLXMatrix(nb_col, nb_col, rows) {}
-    DLXMatrix(size_t nb_col, size_t nb_prim, const Vect2D &rows);
+    DLXMatrix(size_t nb_col, size_t nb_primary, const Vect2D &rows);
     DLXMatrix(const DLXMatrix &);
     DLXMatrix &operator=(const DLXMatrix &other);
     DLXMatrix(DLXMatrix &&) = default;
     DLXMatrix &operator=(DLXMatrix &&other) = default;
     ~DLXMatrix() = default;
 
-    size_t width() const { return heads.size() - 1; }
-    size_t height() const { return rows.size(); }
+    size_t nb_cols() const { return heads_.size() - 1; }
+    size_t nb_rows() const { return rows_.size(); }
+    size_t nb_primary() const { return nb_primary_; }
 
     void check_sizes() const;
 
@@ -114,8 +115,8 @@ class DLXMatrix {
     size_t nb_choices, nb_dances;  // Computation statistics
 
   protected:
-    Header *master() { return &heads[0]; }
-    const Header *master() const { return &heads[0]; }
+    Header *master() { return &heads_[0]; }
+    const Header *master() const { return &heads_[0]; }
 
     Header *choose_min();
     void cover(Header *col);
