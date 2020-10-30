@@ -137,25 +137,33 @@ class DLXMatrixFixture {
 };
 
 DLXMatrix::DLXMatrix(size_t nb_col, size_t sec_start)
-    : nb_primary(sec_start), heads(nb_col + 1), search_down(true),
+    : master(new Header{.col_id=std::numeric_limits<size_t>::max()}),
+      heads(nb_col), nb_primary(sec_start), search_down(true),
       nb_choices(0), nb_dances(0) {
     check_bound("nb_primary", nb_col, nb_primary);
-    for (size_t i = 0; i <= nb_col; i++) {
+
+    master->node.up = master->node.down = &master->node;  // Is this used ?
+
+    for (size_t i = 0; i < nb_col; i++) {
+        heads[i].col_id = i;
         heads[i].size = 0;
         heads[i].node.up = heads[i].node.down = &heads[i].node;
-        // heads[i].node.head = &heads[i];  // unused
+        // heads[i]b.node.head = &heads[i];  // unused
         // heads[i].node.row_id = -1  // unused;
         // heads[i].node.left = heads[i].node.right = nullptr;  // unused
     }
-    heads[nb_col].right = &heads[0];
-    for (size_t i = 0; i < nb_col; i++)
-        heads[i].right = &heads[i + 1];
-    heads[0].left = &heads[nb_col];
-    heads[0].col_id =  // large enough sentinel value for choose_min
-        std::numeric_limits<size_t>::max();
-    for (size_t i = 1; i <= nb_col; i++) {
-        heads[i].col_id = i - 1;
-        heads[i].left = &heads[i - 1];
+    if (nb_col > 0) {
+        master->right = &heads[0];
+        heads[0].left = master.get();
+        heads.back().right = master.get();
+        master->left = &heads.back();
+        for (size_t i = 0; i < nb_col - 1; i++)
+            heads[i].right = &heads[i + 1];
+        for (size_t i = 1; i < nb_col; i++)
+            heads[i].left = &heads[i - 1];
+    }
+    else {
+        master->right = master->left = master.get();
     }
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix(size_t)") {
@@ -247,8 +255,9 @@ TEST_CASE_FIXTURE(DLXMatrixFixture,
 
 DLXMatrix &DLXMatrix::operator=(const DLXMatrix &other) {
     DLXMatrix res(other);  // Construct a correct copy
-    nb_primary = res.nb_primary;
+    master = std::move(res.master);
     heads = std::move(res.heads);
+    nb_primary = res.nb_primary;
     rows = std::move(res.rows);
     work = std::move(res.work);
     search_down = res.search_down;
@@ -299,7 +308,7 @@ TEST_CASE("method row_dense") {
 }
 
 void DLXMatrix::check_sizes() const {
-    for (Header *h = master()->right; h != master(); h = h->right) {
+    for (Header *h = master->right; h != master.get(); h = h->right) {
         size_t irows = 0;
         for (Node *p = h->node.down; p != &h->node; irows++, p = p->down) {}
         check_size("column", h->size, irows);
@@ -315,14 +324,14 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method check_sizes") {
 size_t DLXMatrix::add_row_sparse(const Vect1D &r) {
     // Check for bound before modifying anything
     for (auto i : r)
-        heads.at(i + 1);
+        heads.at(i);
 
     size_t row_id = rows.size();
     rows.emplace_back(r.size());
     std::vector<Node> &row = rows.back();
 
     for (size_t i = 0; i < r.size(); i++) {
-        auto &h = heads[r[i] + 1];
+        auto &h = heads[r[i]];
         row[i].row_id = row_id;
         row[i].head = &h;
         h.size++;
@@ -396,7 +405,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method row_to_sparse") {
 std::vector<bool> DLXMatrix::row_to_dense(Vect1D row) const {
     // Check for bound
     for (auto i : row)
-        heads.at(i + 1);
+        heads.at(i);
     std::sort(row.begin(), row.end());
     std::vector<bool> res(width(), false);
     auto it = row.begin();
@@ -529,7 +538,7 @@ void DLXMatrix::unchoose(Node *row) {
 }
 
 DLXMatrix::Header *DLXMatrix::choose_min() {
-    Header *choice = master()->right;
+    Header *choice = master->right;
     size_t min_size = choice->size;
     for (Header *h = choice->right; h->col_id < nb_primary; h = h->right) {
         if (h->size < min_size) {
@@ -550,7 +559,7 @@ Vect2D DLXMatrix::search_rec(size_t max_sol) {
     return res;
 }
 void DLXMatrix::search_rec_internal(size_t max_sol, Vect2D &res) {
-    if (master()->right->col_id >= nb_primary) {
+    if (master->right->col_id >= nb_primary) {
         res.push_back(get_solution());
         return;
     }
@@ -613,7 +622,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_rec") {
 bool DLXMatrix::search_iter() {
     while (search_down || !work.empty()) {
         if (search_down) {  // going down the recursion
-            if (master()->right->col_id >= nb_primary) {
+            if (master->right->col_id >= nb_primary) {
                 search_down = false;
                 return true;
             }

@@ -20,7 +20,8 @@
 
 #include <climits>
 #include <iostream>
-#include <vector>
+#include <vector>    // vector
+#include <memory>    // unique_ptr
 
 namespace DLX_backtrack {
 
@@ -58,8 +59,10 @@ class DLXMatrix {
         Header *left, *right;
     };
 
-    size_t nb_primary;
+    std::unique_ptr<Header> master;
     std::vector<Header> heads;
+    size_t nb_primary;
+
     std::vector<std::vector<Node>> rows;
 
     std::vector<Node *> work;
@@ -69,7 +72,7 @@ class DLXMatrix {
     using Vect1D = std::vector<size_t>;
     using Vect2D = std::vector<Vect1D>;
 
-    DLXMatrix() : DLXMatrix(0) {}
+    DLXMatrix() : DLXMatrix(0) {};
     explicit DLXMatrix(size_t nb_col) : DLXMatrix(nb_col, nb_col) {}
     DLXMatrix(size_t nb_col, size_t nb_prim);
     DLXMatrix(size_t nb_col, const Vect2D &rows)
@@ -81,7 +84,7 @@ class DLXMatrix {
     DLXMatrix &operator=(DLXMatrix &&other) = default;
     ~DLXMatrix() = default;
 
-    size_t width() const { return heads.size() - 1; }
+    size_t width() const { return heads.size(); }
     size_t height() const { return rows.size(); }
 
     void check_sizes() const;
@@ -114,8 +117,6 @@ class DLXMatrix {
     size_t nb_choices, nb_dances;  // Computation statistics
 
   protected:
-    Header *master() { return &heads[0]; }
-    const Header *master() const { return &heads[0]; }
 
     Header *choose_min();
     void cover(Header *col);
