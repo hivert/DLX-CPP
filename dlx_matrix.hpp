@@ -32,7 +32,8 @@ struct size_mismatch_error : public std::runtime_error {
 
 struct out_of_bound_error : public std::runtime_error {
     out_of_bound_error(const std::string &s, size_t bound, size_t i)
-        : std::runtime_error("Value " + s + " too large : " + std::to_string(i) +
+        : std::runtime_error("Value " + s +
+                             " too large : " + std::to_string(i) +
                              " (at most " + std::to_string(bound) + ")") {}
 };
 
@@ -44,7 +45,6 @@ std::vector<int> inverse_perm(const std::vector<int> &perm);
 /////////////////
 class DLXMatrix {
   private:
-
     struct Header;
     struct Node {
         size_t row_id;
@@ -66,7 +66,6 @@ class DLXMatrix {
     bool search_down;
 
   public:
-
     DLXMatrix() = delete;
     explicit DLXMatrix(size_t nb_col) : DLXMatrix(nb_col, nb_col) {}
     DLXMatrix(size_t nb_col, size_t nb_prim);
@@ -110,7 +109,6 @@ class DLXMatrix {
     int nb_choices, nb_dances;  // Computation statistics
 
   protected:
-
     Header *master() { return &heads[0]; }
     const Header *master() const { return &heads[0]; }
 
@@ -125,7 +123,6 @@ class DLXMatrix {
     std::vector<bool> row_dense(const std::vector<Node> &) const;
     void print_solution(const std::vector<Node *> &) const;
 };
-
 
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const std::vector<T> &v);

@@ -39,15 +39,18 @@ namespace DLX_backtrack {
 TEST_SUITE_BEGIN("[dlx_matrix]Errors");
 ///////////////////////////////////////
 
-void check_size(const std::string &s, size_t expected, size_t sz){
-    if (sz != expected) throw size_mismatch_error(s, expected, sz);
+void check_size(const std::string &s, size_t expected, size_t sz) {
+    if (sz != expected)
+        throw size_mismatch_error(s, expected, sz);
 }
 void check_bound(const std::string &s, size_t bound, size_t i) {
-    if (i > bound) throw out_of_bound_error(s, bound, i);
+    if (i > bound)
+        throw out_of_bound_error(s, bound, i);
 }
 
 TEST_CASE("[dlx_matrix]size_mismatch_error") {
-    CHECK_THROWS_AS(throw size_mismatch_error("bla", 2, 3), size_mismatch_error);
+    CHECK_THROWS_AS(throw size_mismatch_error("bla", 2, 3),
+                    size_mismatch_error);
 }
 TEST_CASE("[dlx_matrix]check_size") {
     CHECK_NOTHROW(check_size("bla", 2, 2));
@@ -126,8 +129,8 @@ class DLXMatrixFixture {
     // clang-format on
   protected:
     std::vector<std::vector<int>> VA2AB;
-    DLXMatrix empty0, empty1, empty5, M1_1, M5_2, M5_3, M5_3_Sec2, M6_10,
-        MA2AB, MA2AB_8;
+    DLXMatrix empty0, empty1, empty5, M1_1, M5_2, M5_3, M5_3_Sec2, M6_10, MA2AB,
+        MA2AB_8;
     std::vector<DLXMatrix> TestSample;
 };
 
@@ -173,8 +176,9 @@ DLXMatrix::DLXMatrix(size_t nb_col, size_t sec_start,
     for (const auto &r : rows)
         add_row_sparse(r);
 }
-TEST_CASE_FIXTURE(DLXMatrixFixture,
-                  "[dlx_matrix]DLXMatrix(size_t, const vector<vector<int>> &))") {
+TEST_CASE_FIXTURE(
+    DLXMatrixFixture,
+    "[dlx_matrix]DLXMatrix(size_t, const vector<vector<int>> &))") {
     SUBCASE("Correct rows") {
         CHECK(M5_2.width() == 5);
         CHECK(M5_2.height() == 2);
@@ -186,7 +190,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture,
         CHECK_THROWS_AS(DLXMatrix(3, {{0, 5}}), std::out_of_range);
     }
 }
-TEST_CASE("[dlx_matrix]DLXMatrix(size_t, size_t, const vector<vector<int>> &))") {
+TEST_CASE(
+    "[dlx_matrix]DLXMatrix(size_t, size_t, const vector<vector<int>> &))") {
     SUBCASE("Correct call") {
         CHECK_NOTHROW(DLXMatrix(0, 0, {}));
         CHECK_NOTHROW(DLXMatrix(1, 1, {{0}}));
@@ -196,7 +201,8 @@ TEST_CASE("[dlx_matrix]DLXMatrix(size_t, size_t, const vector<vector<int>> &))")
         CHECK_THROWS_AS(DLXMatrix(0, 1, {}), out_of_bound_error);
     }
     SUBCASE("Row out of range") {
-        CHECK_THROWS_AS(DLXMatrix(5, 4, {{0, 1}, {2, 3, 5}}), std::out_of_range);
+        CHECK_THROWS_AS(DLXMatrix(5, 4, {{0, 1}, {2, 3, 5}}),
+                        std::out_of_range);
         CHECK_THROWS_AS(DLXMatrix(3, 3, {{0, 5}}), std::out_of_range);
     }
 }
@@ -414,10 +420,10 @@ bool DLXMatrix::is_solution(const std::vector<int> &sol) {
         std::transform(cols.begin(), cols.end(), row_dense(r).begin(),
                        cols.begin(), std::plus<>());
     }
-    for (size_t i=0; i < nb_primary; i++)
+    for (size_t i = 0; i < nb_primary; i++)
         if (cols[i] != 1)
             return false;
-    for (size_t i=nb_primary; i < width(); i++)
+    for (size_t i = nb_primary; i < width(); i++)
         if (cols[i] > 1)
             return false;
     return true;
@@ -560,9 +566,10 @@ normalize_solutions(std::vector<std::vector<int>> sols) {
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_rec") {
     SUBCASE("Basic matrices") {
-        CHECK(normalize_solutions(M6_10.search_rec()) ==
-              std::vector<std::vector<int>>(
-                  {{0, 2, 3, 5}, {0, 3, 9}, {0, 4, 5, 6}, {1, 5, 8}, {4, 5, 7}}));
+        CHECK(
+            normalize_solutions(M6_10.search_rec()) ==
+            std::vector<std::vector<int>>(
+                {{0, 2, 3, 5}, {0, 3, 9}, {0, 4, 5, 6}, {1, 5, 8}, {4, 5, 7}}));
         CHECK(normalize_solutions(M5_2.search_rec()) ==
               std::vector<std::vector<int>>({{0, 1}}));
         CHECK(normalize_solutions(M5_3.search_rec()) ==
@@ -574,9 +581,11 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_rec") {
         CHECK(normalize_solutions(MA2AB.search_rec()) ==
               std::vector<std::vector<int>>({{0, 8, 9, 10}}));
         CHECK(normalize_solutions(MA2AB_8.search_rec()) ==
-              std::vector<std::vector<int>>(
-                  {{0, 4, 8, 9}, {0, 5, 7, 9}, {0, 8, 9, 10}, {1, 3, 8, 9},
-                                                              {2, 3, 7, 9}}));
+              std::vector<std::vector<int>>({{0, 4, 8, 9},
+                                             {0, 5, 7, 9},
+                                             {0, 8, 9, 10},
+                                             {1, 3, 8, 9},
+                                             {2, 3, 7, 9}}));
     }
 
     SUBCASE("Check that all found solutions are actual solutions") {
