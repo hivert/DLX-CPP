@@ -194,9 +194,9 @@ TEST_CASE("[dlx_matrix]DLXMatrix(size_t, size_t, const Vect2D &))") {
 
 DLXMatrix::DLXMatrix(const DLXMatrix &other)
     : DLXMatrix(other.nb_cols(), other.nb_primary_) {
-  for (auto &row : other.rows_) add_row_sparse(row_sparse(row));
-  for (Node *n : other.work_) {
-    Node *nd = &rows_[n->row_id][n - other.rows_[n->row_id].data()];
+  for (const auto &row : other.rows_) add_row_sparse(row_sparse(row));
+  for (const Node *n : other.work_) {
+    Node *nd = &rows_[n->row_id][std::distance(other.rows_[n->row_id].data(), n)];
     cover(nd->head);
     choose(nd);
   }
@@ -205,7 +205,7 @@ DLXMatrix::DLXMatrix(const DLXMatrix &other)
   nb_dances = other.nb_dances;
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix copy constructor") {
-  for (auto &M : TestSample) {
+  for (const DLXMatrix &M : TestSample) {
     CAPTURE(M);
     DLXMatrix N(M);
     CHECK(N.nb_cols() == M.nb_cols());
@@ -239,7 +239,7 @@ DLXMatrix &DLXMatrix::operator=(const DLXMatrix &other) {
   return *this;
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "operator=") {
-  for (auto &M : TestSample) {
+  for (const DLXMatrix &M : TestSample) {
     CAPTURE(M);
     DLXMatrix N(0);
     N = M;
@@ -287,7 +287,7 @@ void DLXMatrix::check_sizes() const {
   }
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "method check_sizes") {
-  for (auto &M : TestSample) {
+  for (const DLXMatrix &M : TestSample) {
     CAPTURE(M);
     CHECK_NOTHROW(M.check_sizes());
   }
@@ -562,8 +562,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_rec") {
   }
 
   SUBCASE("Check that all found solutions are actual solutions") {
-    for (auto &M : TestSample) {
-      for (auto &s : M.search_rec()) {
+    for (DLXMatrix &M : TestSample) {
+      for (const Vect1D &s : M.search_rec()) {
         CAPTURE(M);
         CAPTURE(s);
         CHECK(M.is_solution(s));
@@ -613,10 +613,10 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_iter") {
   SUBCASE("agrees with search_rec") {
     for (auto M : TestSample) {
       CAPTURE(M);
-      DLXMatrix N(M);
+      DLXMatrix MSave(M);
       DLXMatrix::Vect2D sols;
       while (M.search_iter()) sols.push_back(M.get_solution());
-      CHECK(sols == N.search_rec());
+      CHECK(sols == MSave.search_rec());
     }
   }
   SUBCASE("still work after copy") {
@@ -678,7 +678,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method reset") {
 DLXMatrix DLXMatrix::permuted_inv_columns(const Vect1D &perm) {
   check_size("permutation", perm.size(), nb_cols());
   DLXMatrix res(nb_cols());
-  for (auto &row : rows_) {
+  for (const auto &row : rows_) {
     Vect1D r;
     std::transform(
         row.begin(), row.end(), std::back_inserter(r),
@@ -811,7 +811,7 @@ std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
 }
 
 std::ostream &operator<<(std::ostream &out, const DLXMatrix &M) {
-  for (auto &row : M.rows_) out << M.row_dense(row) << "\n";
+  for (const auto &row : M.rows_) out << M.row_dense(row) << "\n";
   return out;
 }
 
