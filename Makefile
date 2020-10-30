@@ -27,8 +27,14 @@ block_diagram_test: block_diagram.cpp block_diagram.hpp
 sudsol: dlx_matrix.o
 
 #### Cibles diverses ####
+.PHONY: clean tags check
+
 clean:
 	$(RM) *.o *.so $(MAIN_FILES)
+
+tags:
+	etags *.hpp *.cpp *.sage
+
 
 check-dlx_matrix: dlx_matrix_test
 	./dlx_matrix_test
