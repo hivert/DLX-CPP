@@ -25,13 +25,23 @@
 namespace DLX_backtrack {
 
 struct size_mismatch_error : public std::runtime_error {
-    size_mismatch_error(const std::string &s, int i, int j)
-        : std::runtime_error("Wrong " + s + " size : " + std::to_string(i) +
-                             " (expecting " + std::to_string(j) + ")") {}
+    size_mismatch_error(const std::string &s, size_t expected, size_t sz)
+        : std::runtime_error("Wrong " + s + " size : " + std::to_string(sz) +
+                             " (expecting " + std::to_string(expected) + ")") {}
 };
+
+struct out_of_bound_error : public std::runtime_error {
+    out_of_bound_error(const std::string &s, size_t bound, size_t i)
+        : std::runtime_error("Value " + s + " too large : " + std::to_string(i) +
+                             " (at most " + std::to_string(bound) + ")") {}
+};
+
+void check_size(const std::string &s, size_t expected, size_t sz);
+void check_bound(const std::string &s, size_t bound, size_t i);
 
 std::vector<int> inverse_perm(const std::vector<int> &perm);
 
+/////////////////
 class DLXMatrix {
   private:
 
@@ -115,6 +125,10 @@ class DLXMatrix {
     std::vector<bool> row_dense(const std::vector<Node> &) const;
     void print_solution(const std::vector<Node *> &) const;
 };
+
+
+template <typename T>
+std::ostream &operator<<(std::ostream &out, const std::vector<T> &v);
 
 }  // namespace DLX_backtrack
 
