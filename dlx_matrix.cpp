@@ -25,7 +25,6 @@
 #include "doctest/doctest.h"
 
 #include <algorithm>   // sort, transform, shuffle
-#include <cassert>     // assert
 #include <functional>  // bind, equal_to, _2
 #include <iostream>    // cout, cin, ...
 #include <numeric>     // iota
@@ -42,16 +41,34 @@ using Vect2D = DLXMatrix::Vect2D;
 TEST_SUITE_BEGIN("[dlx_matrix]Errors");
 ///////////////////////////////////////
 
-void check_size(const std::string &s, size_t expected, size_t sz) {
-  if (sz != expected) throw size_mismatch_error(s, expected, sz);
-}
 
 TEST_CASE("[dlx_matrix]size_mismatch_error") {
-  CHECK_THROWS_AS(throw size_mismatch_error("bla", 2, 3), size_mismatch_error);
+  std::string message;
+  CHECK_THROWS_AS(throw size_mismatch_error("foo", 2, 3), size_mismatch_error);
+  try {
+    throw size_mismatch_error("foo", 2, 3);
+  } catch (const size_mismatch_error &e) {
+    message = e.what();
+  }
+  CHECK(message == "Wrong foo size: 3 (expecting 2)");
+}
+void check_size(const std::string &s, size_t expected, size_t sz) {
+  if (sz != expected) throw size_mismatch_error(s, expected, sz);
 }
 TEST_CASE("[dlx_matrix]check_size") {
   CHECK_NOTHROW(check_size("bla", 2, 2));
   CHECK_THROWS_AS(check_size("bla", 2, 3), size_mismatch_error);
+}
+
+TEST_CASE("[dlx_matrix]empty_error") {
+  std::string message;
+  CHECK_THROWS_AS(throw empty_error("foo"), empty_error);
+  try {
+    throw empty_error("foo");
+  } catch (const empty_error &e) {
+    message = e.what();
+  }
+  CHECK(message == "Empty foo are not allowed");
 }
 
 ///////////////////////////////////////////
@@ -213,7 +230,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix copy constructor") {
     REQUIRE(N.nb_rows() == M.nb_rows());
     for (size_t i = 0; i < M.nb_rows(); i++)
       CHECK(N.row_sparse(i) == M.row_sparse(i));
-    // Check that modifying the copy doesnt change the original
+    // Check that modifying the copy doesn't change the original
     if (N.nb_cols() != 0) {
       N.add_row_sparse({0});
       REQUIRE(N.nb_rows() == M.nb_rows() + 1);
@@ -234,7 +251,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture,
 }
 
 DLXMatrix &DLXMatrix::operator=(const DLXMatrix &other) {
-  DLXMatrix res(other);  // Construct a correct copy
+  DLXMatrix res(other);
   nb_primary_ = res.nb_primary_;
   heads_ = std::move(res.heads_);
   rows_ = std::move(res.rows_);
@@ -299,9 +316,9 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method check_sizes") {
 }
 
 size_t DLXMatrix::add_row_sparse(const Vect1D &r) {
+  if (r.empty()) throw empty_error("rows");
   // Check for bound before modifying anything
   for (size_t i : r) heads_.at(i + 1);
-  assert(r.size() != 0);
 
   size_t row_id = rows_.size();
   rows_.emplace_back(r.size());
@@ -354,10 +371,20 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method add_row_sparse") {
       }
     }
   }
+  SUBCASE("Empty row are not allowed") {
+    DLXMatrix MSave(M5_3);
+    CHECK_THROWS_AS(M5_3.add_row_sparse({}), empty_error);
+    CHECK(M5_3.nb_cols() == MSave.nb_cols());
+    REQUIRE(M5_3.nb_rows() == MSave.nb_rows());
+    for (size_t i = 0; i < MSave.nb_rows(); i++)
+      CHECK(M5_3.row_sparse(i) == MSave.row_sparse(i));
+    CHECK_NOTHROW(M5_3.check_sizes());
+  }
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "method add_row") {
   CHECK(M5_3.add_row({2, 3}) == 3);
   CHECK(M5_3.row_sparse(3) == Vect1D({2, 3}));
+  CHECK_THROWS_AS(M5_3.add_row({}), empty_error);
 }
 
 Vect1D DLXMatrix::row_to_sparse(const std::vector<bool> &row) const {

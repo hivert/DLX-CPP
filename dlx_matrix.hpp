@@ -26,11 +26,15 @@ namespace DLX_backtrack {
 
 struct size_mismatch_error : public std::runtime_error {
   size_mismatch_error(const std::string &s, size_t expected, size_t sz)
-      : std::runtime_error("Wrong " + s + " size : " + std::to_string(sz) +
+      : std::runtime_error("Wrong " + s + " size: " + std::to_string(sz) +
                            " (expecting " + std::to_string(expected) + ")") {}
 };
-
 void check_size(const std::string &s, size_t expected, size_t sz);
+
+struct empty_error : public std::runtime_error {
+  empty_error(const std::string &s)
+      : std::runtime_error("Empty " + s + " are not allowed") {}
+};
 
 std::vector<size_t> inverse_perm(const std::vector<size_t> &perm);
 
@@ -122,8 +126,10 @@ class DLXMatrix {
   void print_solution(const std::vector<Node *> &) const;
 };
 
-static_assert(std::is_move_constructible<DLXMatrix>::value);
-static_assert(std::is_move_assignable<DLXMatrix>::value);
+static_assert(std::is_move_constructible<DLXMatrix>::value,
+              "DLXMatrix should be move constructible");
+static_assert(std::is_move_assignable<DLXMatrix>::value,
+              "DLXMatrix should bt move assignable");
 
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const std::vector<T> &v);
@@ -133,9 +139,9 @@ std::ostream &operator<<(std::ostream &out, const DLXMatrix &M);
 
 namespace std {
 
-//inline ostream &operator<<(ostream &out, const DLX_backtrack::DLXMatrix &M) {
-//  return DLX_backtrack::operator<<(out, M);
-//}
+inline ostream &operator<<(ostream &out, const DLX_backtrack::DLXMatrix &M) {
+  return DLX_backtrack::operator<<(out, M);
+}
 
 }  // namespace std
 
