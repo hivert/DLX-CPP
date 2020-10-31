@@ -889,6 +889,31 @@ template<typename T> struct StringMaker<std::vector<T>> {
   }
 };
 
+TEST_SUITE("[dlx_matrix]doctest::operator<<(out, std::vector<T>)") {
+  TEST_CASE("std::vector<bool>") {
+    std::ostringstream os;
+    os << std::vector<bool>({});
+    CHECK(os.str() == "[]");
+    os.str("");
+    os << std::vector<bool>({1, 0, 1, 1});
+    CHECK(os.str() == "[1, 0, 1, 1]");
+  }
+  TEST_CASE("std::vector<int>") {
+    std::ostringstream os;
+    os << std::vector<int>({});
+    CHECK(os.str() == "[]");
+    os.str("");
+    os << std::vector<int>({3, 1, -3, 2});
+    CHECK(os.str() == "[3, 1, -3, 2]");
+  }
+  TEST_CASE("std::vector<std::vector<int>>") {
+    std::ostringstream os;
+    os << std::vector<std::vector<int>>({});
+    CHECK(os.str() == "[]");
+    os.str("");
+    os << std::vector<std::vector<int>>({{3, 1, -3, 2}, {}, {1, 2}});
+    CHECK(os.str() == "[[3, 1, -3, 2], [], [1, 2]]");
+  }
 }
 
 }  // namespace doctest
