@@ -106,7 +106,7 @@ class DLXMatrix {
   DLXMatrix permuted_inv_columns(const Vect1D &perm);
   DLXMatrix permuted_rows(const Vect1D &perm);
 
-  friend std::ostream &operator<<(std::ostream &, const DLXMatrix &);
+  std::string to_string() const;
 
   size_t nb_choices, nb_dances;  // Computation statistics
 
@@ -131,18 +131,11 @@ static_assert(std::is_move_constructible<DLXMatrix>::value,
 static_assert(std::is_move_assignable<DLXMatrix>::value,
               "DLXMatrix should bt move assignable");
 
-template <typename T>
-std::ostream &operator<<(std::ostream &out, const std::vector<T> &v);
-std::ostream &operator<<(std::ostream &out, const DLXMatrix &M);
-
-}  // namespace DLX_backtrack
-
-namespace std {
-
-inline ostream &operator<<(ostream &out, const DLX_backtrack::DLXMatrix &M) {
-  return DLX_backtrack::operator<<(out, M);
+inline std::ostream &operator<<(std::ostream &out,
+                                const DLX_backtrack::DLXMatrix &M) {
+  return out << M.to_string();
 }
 
-}  // namespace std
+}  // namespace DLX_backtrack
 
 #endif  // DLX_MATRIX_HPP_

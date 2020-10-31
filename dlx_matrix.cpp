@@ -27,6 +27,7 @@
 #include <algorithm>   // sort, transform, shuffle
 #include <functional>  // bind, equal_to, _2
 #include <iostream>    // cout, cin, ...
+#include <sstream>     // ostringstream
 #include <numeric>     // iota
 #include <random>      // default_random_engine
 #include <stdexcept>   // out_of_range
@@ -133,8 +134,37 @@ class DLXMatrixFixture {
   DLXMatrix::Vect2D VA2AB;
   DLXMatrix empty0, empty1, empty5, M1_1, M5_2, M5_3, M5_3_Sec2, M6_10, MA2AB,
       MA2AB_8;
+  const std::string M5_3_Sec2_str =
+      "[1, 1, 0 | 0, 0]\n"
+      "[0, 0, 1 | 0, 0]\n"
+      "[0, 0, 1 | 1, 1]\n"
+      "[0, 1, 1 | 0, 1]\n";
   std::vector<DLXMatrix> TestSample;
 };
+
+std::string DLXMatrix::to_string() const {
+  std::string res;
+  for (const auto &row : rows_) {
+    auto r = row_dense(row);
+    res += "[" + std::to_string(r[0]);
+    for (size_t i = 1; i < r.size(); ++i) {
+      res += i == nb_primary_ ? " | " : ", ";
+      res += std::to_string(r[i]);
+    }
+    res += "]\n";
+  }
+  return res;
+}
+TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]method to_string") {
+  CHECK(M5_2.to_string() == "[1, 1, 0, 0, 0]\n[0, 0, 1, 1, 1]\n");
+  CHECK(M5_3_Sec2.to_string() == M5_3_Sec2_str);
+}
+
+TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix::operator<<") {
+  std::ostringstream os;
+  os << M5_3_Sec2;
+  CHECK(os.str() == M5_3_Sec2_str);
+}
 
 DLXMatrix::DLXMatrix(size_t nb_col, size_t nb_primary)
     : nb_primary_(std::min(nb_col, nb_primary)),
@@ -831,6 +861,14 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method search_random") {
   }
 }
 
+////////////////////////////////////////////////////
+TEST_SUITE_END();  // "[dlx_matrix]class DLXMatrix";
+////////////////////////////////////////////////////
+
+}  // namespace DLX_backtrack
+
+namespace doctest {
+
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
   out << '[';
@@ -843,22 +881,12 @@ std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
   return out;
 }
 
-std::ostream &operator<<(std::ostream &out, const DLXMatrix &M) {
-  for (const auto &row : M.rows_) out << M.row_dense(row) << "\n";
-  return out;
-}
-
-////////////////////////////////////////////////////
-TEST_SUITE_END();  // "[dlx_matrix]class DLXMatrix";
-////////////////////////////////////////////////////
-
-}  // namespace DLX_backtrack
-
-namespace doctest {
-
-template <typename T>
-std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
-  return DLX_backtrack::operator<<(out, v);
-}
+template<typename T> struct StringMaker<std::vector<T>> {
+  static String convert(const std::vector<T>& v) {
+    std::ostringstream os;
+    os << v;
+    return String(os.str().c_str());
+  }
+};
 
 }  // namespace doctest
