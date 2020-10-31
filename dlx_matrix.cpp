@@ -195,10 +195,11 @@ TEST_CASE("[dlx_matrix]DLXMatrix(size_t, size_t, const Vect2D &))") {
 DLXMatrix::DLXMatrix(const DLXMatrix &other)
     : DLXMatrix(other.nb_cols(), other.nb_primary_) {
   for (const auto &row : other.rows_) add_row_sparse(row_sparse(row));
-  for (const Node *n : other.work_) {
-    Node *nd = &rows_[n->row_id][std::distance(other.rows_[n->row_id].data(), n)];
-    cover(nd->head);
-    choose(nd);
+  for (const Node *nother : other.work_) {
+    size_t id = nother->row_id;
+    Node *node = &rows_[id][std::distance(other.rows_[id].data(), nother)];
+    cover(node->head);
+    choose(node);
   }
   search_down_ = other.search_down_;
   nb_choices = other.nb_choices;
@@ -281,8 +282,7 @@ TEST_CASE("method row_dense") {
 void DLXMatrix::check_sizes() const {
   for (Header *h = master()->right; h != master(); h = h->right) {
     size_t irows = 0;
-    for (Node *p = h->node.down; p != &h->node; irows++, p = p->down) {
-    }
+    for (Node *p = h->node.down; p != &h->node; p = p->down) irows++;
     check_size("column", h->size, irows);
   }
 }
