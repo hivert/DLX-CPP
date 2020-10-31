@@ -99,9 +99,10 @@ void read_sudoku(std::istream &in) {
   matrix.resize(sq_size, empty_row);
 
   if (type == 's') {  // Standard block structure
-    for (size_t r = 0; r < sq_size; r++)
+    for (size_t r = 0; r < sq_size; r++) {
       for (size_t c = 0; c < sq_size; c++)
         blocks[r][c] = c / col_size + row_size * (r / row_size) + 1;
+    }
   } else {  // Generalized block structure
     for (size_t r = 0; r < sq_size; r++)
       for (size_t c = 0; c < sq_size; c++) in >> blocks[r][c];
@@ -148,18 +149,14 @@ int main(int argc, char *argv[]) {
   }
 
   auto tencode = std::chrono::high_resolution_clock::now();
-  for (size_t i = 1; i <= sq_size; i++)
-    for (size_t j = 1; j <= sq_size; j++)
-      new_col({'s', i, j});  // Square i,j occupied
-  for (size_t i = 1; i <= sq_size; i++)
-    for (size_t j = 1; j <= sq_size; j++)
-      new_col({'b', i, j});  // Block i occupied by j
-  for (size_t i = 1; i <= sq_size; i++)
-    for (size_t j = 1; j <= sq_size; j++)
-      new_col({'r', i, j});  // Row i occupied by j
-  for (size_t i = 1; i <= sq_size; i++)
-    for (size_t j = 1; j <= sq_size; j++)
-      new_col({'c', i, j});  // Col i occupied by j
+  for (size_t i = 1; i <= sq_size; i++)   // Square i,j occupied
+    for (size_t j = 1; j <= sq_size; j++) new_col({'s', i, j});
+  for (size_t i = 1; i <= sq_size; i++)   // Block i occupied by j
+    for (size_t j = 1; j <= sq_size; j++) new_col({'b', i, j});
+  for (size_t i = 1; i <= sq_size; i++)   // Row i occupied by j
+    for (size_t j = 1; j <= sq_size; j++) new_col({'r', i, j});
+  for (size_t i = 1; i <= sq_size; i++)   // Col i occupied by j
+    for (size_t j = 1; j <= sq_size; j++) new_col({'c', i, j});
   for (size_t i = 0; i < nb_hint; i++) new_col({'e', i, 0});
 
   DLX_backtrack::DLXMatrix M(col_names.size());

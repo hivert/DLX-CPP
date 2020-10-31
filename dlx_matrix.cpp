@@ -15,17 +15,17 @@
 
 // Implementation of Knuth dancing links backtrack algorithm
 //////////////////////////////////////////////////////////////
+#include "dlx_matrix.hpp"
+
 #ifndef DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #ifndef DOCTEST_CONFIG_IMPLEMENT
 #define DOCTEST_CONFIG_DISABLE
 #endif
 #endif
-
 #include "doctest/doctest.h"
 
-#include "dlx_matrix.hpp"
-
 #include <algorithm>   // sort, transform, shuffle
+#include <cassert>     // assert
 #include <functional>  // bind, equal_to, _2
 #include <iostream>    // cout, cin, ...
 #include <numeric>     // iota
@@ -213,6 +213,11 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "[dlx_matrix]DLXMatrix copy constructor") {
     REQUIRE(N.nb_rows() == M.nb_rows());
     for (size_t i = 0; i < M.nb_rows(); i++)
       CHECK(N.row_sparse(i) == M.row_sparse(i));
+    // Check that modifying the copy doesnt change the original
+    if (N.nb_cols() != 0) {
+      N.add_row_sparse({0});
+      REQUIRE(N.nb_rows() == M.nb_rows() + 1);
+    }
   }
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture,
@@ -296,6 +301,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "method check_sizes") {
 size_t DLXMatrix::add_row_sparse(const Vect1D &r) {
   // Check for bound before modifying anything
   for (size_t i : r) heads_.at(i + 1);
+  assert(r.size() != 0);
 
   size_t row_id = rows_.size();
   rows_.emplace_back(r.size());

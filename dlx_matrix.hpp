@@ -133,9 +133,9 @@ std::ostream &operator<<(std::ostream &out, const DLXMatrix &M);
 
 namespace std {
 
-inline ostream &operator<<(ostream &out, const DLX_backtrack::DLXMatrix &M) {
-  return DLX_backtrack::operator<<(out, M);
-}
+//inline ostream &operator<<(ostream &out, const DLX_backtrack::DLXMatrix &M) {
+//  return DLX_backtrack::operator<<(out, M);
+//}
 
 }  // namespace std
 
