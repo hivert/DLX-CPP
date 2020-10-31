@@ -112,7 +112,7 @@ void read_sudoku(std::istream &in) {
   for (size_t r = 0; r < sq_size; r++) {
     for (size_t c = 0; c < sq_size; c++) {
       char ch = in.peek();
-      while (ch == ' ' or ch == '\n') {
+      while (ch == ' ' || ch == '\n') {
         in.ignore();
         ch = in.peek();
       }

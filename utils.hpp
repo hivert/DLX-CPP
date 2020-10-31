@@ -13,8 +13,8 @@
 //                  http://www.gnu.org/licenses/                              //
 //****************************************************************************//
 
-#ifndef _UTILS_HPP
-#define _UTILS_HPP
+#ifndef UTILS_HPP_
+#define UTILS_HPP_
 
 #include <cstddef>     // size_t
 #include <functional>  // hash
@@ -59,4 +59,4 @@ struct hash<std::tuple<TT...>> {
 
 }  // namespace std
 
-#endif  // _UTILS_HPP
+#endif  // UTILS_HPP_

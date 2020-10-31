@@ -35,7 +35,7 @@ class BlockDiagram {
   int &get_block(size_t r, size_t c) { return blocks_[r][c]; }
 
   std::string to_string(std::vector<std::vector<int>> fill) const;
-  std::string to_string() const { return to_string(contents_); };
+  std::string to_string() const { return to_string(contents_); }
 
   std::istream &read_blocks_char(std::istream &);
   std::istream &read_blocks_int(std::istream &);

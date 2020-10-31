@@ -165,7 +165,7 @@ std::string BlockDiagram::to_string(std::vector<std::vector<int>> fill) const {
     res += "\n";
   }
   return res;
-};
+}
 TEST_CASE("to_string()") {
   SUBCASE("Standar 3x3 sudoku") {
     BlockDiagram Blk(9, 9);
