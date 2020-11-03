@@ -45,13 +45,9 @@ TEST_SUITE_BEGIN("[dlx_matrix]Errors");
 
 TEST_CASE("Exception size_mismatch_error") {
   std::string message;
-  CHECK_THROWS_AS(throw size_mismatch_error("foo", 2, 3), size_mismatch_error);
-  try {
-    throw size_mismatch_error("foo", 2, 3);
-  } catch (const size_mismatch_error &e) {
-    message = e.what();
-  }
-  CHECK(message == "Wrong foo size: 3 (expecting 2)");
+  CHECK_THROWS_WITH_AS(throw size_mismatch_error("foo", 2, 3),
+                       "Wrong foo size: 3 (expecting 2)",
+                       size_mismatch_error);
 }
 void check_size(const std::string &s, size_t expected, size_t sz) {
   if (sz != expected) throw size_mismatch_error(s, expected, sz);
@@ -63,13 +59,9 @@ TEST_CASE("Function check_size") {
 
 TEST_CASE("Exception empty_error") {
   std::string message;
-  CHECK_THROWS_AS(throw empty_error("foo"), empty_error);
-  try {
-    throw empty_error("foo");
-  } catch (const empty_error &e) {
-    message = e.what();
-  }
-  CHECK(message == "Empty foo are not allowed");
+  CHECK_THROWS_WITH_AS(throw empty_error("foo"),
+                       "Empty foo are not allowed",
+                       empty_error);
 }
 
 ///////////////////////////////////////////
@@ -403,7 +395,9 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_sparse") {
   }
   SUBCASE("Empty row are not allowed") {
     DLXMatrix MSave(M5_3);
-    CHECK_THROWS_AS(M5_3.add_row_sparse({}), empty_error);
+    CHECK_THROWS_WITH_AS(M5_3.add_row_sparse({}),
+                         "Empty rows are not allowed",
+                         empty_error);
     CHECK(M5_3.nb_cols() == MSave.nb_cols());
     REQUIRE(M5_3.nb_rows() == MSave.nb_rows());
     for (size_t i = 0; i < MSave.nb_rows(); i++)
@@ -414,11 +408,13 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_sparse") {
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row") {
   CHECK(M5_3.add_row({2, 3}) == 3);
   CHECK(M5_3.row_sparse(3) == Vect1D({2, 3}));
-  CHECK_THROWS_AS(M5_3.add_row({}), empty_error);
+  CHECK_THROWS_WITH_AS(M5_3.add_row({}),
+                       "Empty rows are not allowed",
+                       empty_error);
 }
 
 Vect1D DLXMatrix::row_to_sparse(const std::vector<bool> &row) const {
-  check_size("row", row.size(), nb_cols());
+  check_size("row", nb_cols(), row.size());
   Vect1D res;
   for (size_t i = 0; i < row.size(); i++) {
     if (row[i]) res.push_back(i);
@@ -428,8 +424,12 @@ Vect1D DLXMatrix::row_to_sparse(const std::vector<bool> &row) const {
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method row_to_sparse") {
   CHECK(M5_3.row_to_sparse({0, 1, 1, 0, 0}) == Vect1D({1, 2}));
   CHECK(M5_3.row_to_sparse({0, 1, 0, 1, 1}) == Vect1D({1, 3, 4}));
-  CHECK_THROWS_AS(M5_3.row_to_sparse({0, 1, 1, 0, 1, 1}), size_mismatch_error);
-  CHECK_THROWS_AS(M5_3.row_to_sparse({0, 1, 1, 0}), size_mismatch_error);
+  CHECK_THROWS_WITH_AS(M5_3.row_to_sparse({0, 1, 1, 0, 1, 1}),
+                       "Wrong row size: 6 (expecting 5)",
+                       size_mismatch_error);
+  CHECK_THROWS_WITH_AS(M5_3.row_to_sparse({0, 1, 1, 0}),
+                       "Wrong row size: 4 (expecting 5)",
+                       size_mismatch_error);
 }
 
 std::vector<bool> DLXMatrix::row_to_dense(Vect1D row) const {
@@ -460,8 +460,12 @@ size_t DLXMatrix::add_row_dense(const std::vector<bool> &r) {
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_dense") {
   CHECK(M5_3.add_row_dense({0, 0, 1, 1, 0}) == 3);
   CHECK(M5_3.row_sparse(3) == Vect1D({2, 3}));
-  CHECK_THROWS_AS(M5_3.add_row_dense({0, 1, 1, 0}), size_mismatch_error);
-  CHECK_THROWS_AS(M5_3.add_row_dense({0, 1, 1, 0, 1, 0}), size_mismatch_error);
+  CHECK_THROWS_WITH_AS(M5_3.add_row_dense({0, 1, 1, 0}),
+                       "Wrong row size: 4 (expecting 5)",
+                       size_mismatch_error);
+  CHECK_THROWS_WITH_AS(M5_3.add_row_dense({0, 1, 1, 0, 1, 0}),
+                       "Wrong row size: 6 (expecting 5)",
+                       size_mismatch_error);
 }
 
 bool DLXMatrix::is_solution(const Vect1D &sol) {
