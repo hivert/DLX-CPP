@@ -22,7 +22,7 @@
 #define DOCTEST_CONFIG_DISABLE
 #endif
 #endif
-#include "doctest/doctest.h"
+#include <doctest/doctest.h>
 
 #include <algorithm>   // sort, transform, shuffle
 #include <functional>  // bind, equal_to, _2
