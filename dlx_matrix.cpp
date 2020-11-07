@@ -22,7 +22,7 @@
 #define DOCTEST_CONFIG_DISABLE
 #endif
 #endif
-#include <doctest/doctest.h>
+#include "doctest_ext.hpp"
 
 #include <algorithm>   // sort, transform, shuffle
 #include <functional>  // bind, equal_to, _2
@@ -65,9 +65,9 @@ TEST_CASE("Exception empty_error") {
                        empty_error);
 }
 
-///////////////////////////////////////////
-TEST_SUITE_END();  // [dlx_matrix]Errors");
-///////////////////////////////////////////
+/////////////////////////////////////////
+TEST_SUITE_END();  // [dlx_matrix]Errors;
+/////////////////////////////////////////
 
 Vect1D inverse_perm(const Vect1D &perm) {
   Vect1D inv(perm.size());
@@ -872,53 +872,3 @@ TEST_SUITE_END();  // "[dlx_matrix]class DLXMatrix";
 
 }  // namespace DLX_backtrack
 
-namespace doctest {
-
-template <typename T>
-std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
-  out << '[';
-  auto it = v.begin(), end = v.end();
-  if (it != end) {
-    out << *it;
-    for (++it; it != end; ++it) out << ", " << *it;
-  }
-  out << "]";
-  return out;
-}
-
-template<typename T> struct StringMaker<std::vector<T>> {
-  static String convert(const std::vector<T>& v) {
-    std::ostringstream os;
-    os << v;
-    return String(os.str().c_str());
-  }
-};
-
-TEST_SUITE("[dlx_matrix]doctest::operator<<(out, std::vector<T>)") {
-  TEST_CASE("std::vector<bool>") {
-    std::ostringstream os;
-    os << std::vector<bool>({});
-    CHECK(os.str() == "[]");
-    os.str("");
-    os << std::vector<bool>({1, 0, 1, 1});
-    CHECK(os.str() == "[1, 0, 1, 1]");
-  }
-  TEST_CASE("std::vector<int>") {
-    std::ostringstream os;
-    os << std::vector<int>({});
-    CHECK(os.str() == "[]");
-    os.str("");
-    os << std::vector<int>({3, 1, -3, 2});
-    CHECK(os.str() == "[3, 1, -3, 2]");
-  }
-  TEST_CASE("std::vector<std::vector<int>>") {
-    std::ostringstream os;
-    os << std::vector<std::vector<int>>({});
-    CHECK(os.str() == "[]");
-    os.str("");
-    os << std::vector<std::vector<int>>({{3, 1, -3, 2}, {}, {1, 2}});
-    CHECK(os.str() == "[[3, 1, -3, 2], [], [1, 2]]");
-  }
-}
-
-}  // namespace doctest
