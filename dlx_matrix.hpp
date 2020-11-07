@@ -6,9 +6,9 @@
 //    This code is distributed in the hope that it will be useful,            //
 //    but WITHOUT ANY WARRANTY; without even the implied warranty of          //
 //    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       //
-//   General Public License for more details.                                 //
+//    General Public License for more details.                                //
 //                                                                            //
-//  The full text of the GPL is available at:                                 //
+//    The full text of the GPL is available at:                               //
 //                                                                            //
 //                  http://www.gnu.org/licenses/                              //
 //****************************************************************************//
@@ -24,37 +24,25 @@
 
 namespace DLX_backtrack {
 
-struct size_mismatch_error : public std::runtime_error {
-  size_mismatch_error(const std::string &s, size_t expected, size_t sz)
-      : std::runtime_error("Wrong " + s + " size: " + std::to_string(sz) +
-                           " (expecting " + std::to_string(expected) + ")") {}
-};
-void check_size(const std::string &s, size_t expected, size_t sz);
-
-struct empty_error : public std::runtime_error {
-  empty_error(const std::string &s)
-      : std::runtime_error("Empty " + s + " are not allowed") {}
-};
-
-std::vector<size_t> inverse_perm(const std::vector<size_t> &perm);
-
 /////////////////
 class DLXMatrix {
+ public:
+  using ind_t = std::size_t;
  private:
   struct Header;
   struct Node {
-    size_t row_id;
+    ind_t row_id;
     Node *left, *right, *up, *down;
     Header *head;
   };
 
   struct Header {
-    size_t col_id, size;
+    ind_t col_id, size;
     Node node;
     Header *left, *right;
   };
 
-  size_t nb_primary_;
+  ind_t nb_primary_;
   std::vector<Header> heads_;
   std::vector<std::vector<Node>> rows_;
 
@@ -62,15 +50,16 @@ class DLXMatrix {
   bool search_down_;
 
  public:
-  using Vect1D = std::vector<size_t>;
+
+  using Vect1D = std::vector<ind_t>;
   using Vect2D = std::vector<Vect1D>;
 
   DLXMatrix() : DLXMatrix(0) {}
-  explicit DLXMatrix(size_t nb_col) : DLXMatrix(nb_col, nb_col) {}
-  DLXMatrix(size_t nb_col, size_t nb_primary);
-  DLXMatrix(size_t nb_col, const Vect2D &rows)
+  explicit DLXMatrix(ind_t nb_col) : DLXMatrix(nb_col, nb_col) {}
+  DLXMatrix(ind_t nb_col, ind_t nb_primary);
+  DLXMatrix(ind_t nb_col, const Vect2D &rows)
       : DLXMatrix(nb_col, nb_col, rows) {}
-  DLXMatrix(size_t nb_col, size_t nb_primary, const Vect2D &rows);
+  DLXMatrix(ind_t nb_col, ind_t nb_primary, const Vect2D &rows);
   DLXMatrix(const DLXMatrix &);
   DLXMatrix &operator=(const DLXMatrix &other);
   DLXMatrix(DLXMatrix &&) = default;
@@ -83,16 +72,16 @@ class DLXMatrix {
 
   void check_sizes() const;
 
-  size_t add_row(const Vect1D &r) { return add_row_sparse(r); }
-  size_t add_row_sparse(const Vect1D &r);
-  size_t add_row_dense(const std::vector<bool> &r);
-  Vect1D row_sparse(size_t i) const;
-  std::vector<bool> row_dense(size_t i) const;
+  ind_t add_row(const Vect1D &r) { return add_row_sparse(r); }
+  ind_t add_row_sparse(const Vect1D &r);
+  ind_t add_row_dense(const std::vector<bool> &r);
+  Vect1D row_sparse(ind_t i) const;
+  std::vector<bool> row_dense(ind_t i) const;
 
   Vect1D row_to_sparse(const std::vector<bool> &row) const;
   std::vector<bool> row_to_dense(Vect1D row) const;
 
-  Vect2D search_rec(size_t max_sol = SIZE_MAX);
+  Vect2D search_rec(size_t max_sol = std::numeric_limits<size_t>::max());
   bool search_iter();
   bool search_iter(Vect1D &);
   Vect1D get_solution();
@@ -108,7 +97,7 @@ class DLXMatrix {
 
   std::string to_string() const;
 
-  size_t nb_choices, nb_dances;  // Computation statistics
+  int nb_choices, nb_dances;  // Computation statistics
 
  protected:
   Header *master() { return &heads_[0]; }
@@ -125,6 +114,24 @@ class DLXMatrix {
   std::vector<bool> row_dense(const std::vector<Node> &) const;
   void print_solution(const std::vector<Node *> &) const;
 };
+
+struct size_mismatch_error : public std::runtime_error {
+  size_mismatch_error(const std::string &s,
+                      DLXMatrix::ind_t expected, DLXMatrix::ind_t sz)
+      : std::runtime_error("Wrong " + s + " size: " + std::to_string(sz) +
+                           " (expecting " + std::to_string(expected) + ")") {}
+};
+void check_size(const std::string &s,
+                DLXMatrix::ind_t expected, DLXMatrix::ind_t sz);
+
+struct empty_error : public std::runtime_error {
+  empty_error(const std::string &s)
+      : std::runtime_error("Empty " + s + " are not allowed") {}
+};
+
+std::vector<DLXMatrix::ind_t>
+inverse_perm(const std::vector<DLXMatrix::ind_t> &perm);
+
 
 static_assert(std::is_move_constructible<DLXMatrix>::value,
               "DLXMatrix should be move constructible");
