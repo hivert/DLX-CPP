@@ -9,19 +9,19 @@ MAIN_FILES = sudsol dlx_matrix_test block_diagram_test
 .PHONY: clean all
 all: $(MAIN_FILES)
 
-dlx_matrix.o: dlx_matrix.cpp dlx_matrix.hpp
+dlx_matrix.o: dlx_matrix.cpp dlx_matrix.hpp doctest_ext.hpp
 
 libdlx_matrix.o: CXXFLAGS += -fPIC
-libdlx_matrix.o: libdlx_matrix.cpp dlx_matrix.hpp
+libdlx_matrix.o: libdlx_matrix.cpp dlx_matrix.hpp doctest_ext.hpp
 libdlx_matrix.so: libdlx_matrix.o
 	$(LINK.c) -shared $^ -o $@
 
 dlx_matrix_test: CXXFLAGS += -DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-dlx_matrix_test: dlx_matrix.cpp dlx_matrix.hpp
+dlx_matrix_test: dlx_matrix.cpp dlx_matrix.hpp doctest_ext.hpp
 	${CXX} ${CXXFLAGS} dlx_matrix.cpp -o dlx_matrix_test
 
 block_diagram_test: CXXFLAGS += -DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-block_diagram_test: block_diagram.cpp block_diagram.hpp
+block_diagram_test: block_diagram.cpp block_diagram.hpp doctest_ext.hpp
 	${CXX} ${CXXFLAGS} block_diagram.cpp -o block_diagram_test
 
 sudsol: dlx_matrix.o

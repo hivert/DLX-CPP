@@ -17,6 +17,7 @@
 #include <doctest/doctest.h>
 #include <ostream>
 #include <sstream>     // ostringstream
+#include <cstdlib>     // exit
 
 namespace doctest {
 
@@ -70,6 +71,17 @@ TEST_CASE("std::vector<std::vector<int>>") {
 //////////////////////////////////////////////////////////////////////////
 TEST_SUITE_END();  // [dlx_matrix]doctest::operator<<(out, std::vector<T>)
 //////////////////////////////////////////////////////////////////////////
+
+
+inline void run_test(int argc, char** argv) {
+    doctest::Context context;
+
+    context.setOption("order-by", "name"); // sort the test cases by their name
+    context.applyCommandLine(argc, argv);
+    int res = context.run();
+    if (context.shouldExit())
+      exit(res);
+}
 
 }  // namespace doctest
 
