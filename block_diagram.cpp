@@ -27,15 +27,13 @@
 TEST_SUITE_BEGIN("[block_diagram]class BlockDiagram");
 //////////////////////////////////////////////////////
 
-std::istream &read_matrix_int(std::istream &in,
-                              std::vector<std::vector<int>> &mat) {
+std::istream &read_matrix_int(std::istream &in, BlockDiagram::Vect2D &mat) {
   for (auto &r : mat) {
     for (auto &v : r) in >> v;
   }
   return in;
 }
-std::istream &read_matrix_char(std::istream &in,
-                               std::vector<std::vector<int>> &mat) {
+std::istream &read_matrix_char(std::istream &in, BlockDiagram::Vect2D &mat) {
   for (auto &r : mat) {
     for (auto &v : r) {
       char c;
@@ -49,8 +47,8 @@ std::istream &read_matrix_char(std::istream &in,
 BlockDiagram::BlockDiagram(size_t h, size_t w)
     : nb_rows_(h),
       nb_cols_(w),
-      blocks_(h, std::vector<int>(w)),
-      contents_(h, std::vector<int>(w)) {}
+      blocks_(h, Vect1D(w)),
+      contents_(h, Vect1D(w)) {}
 TEST_CASE("BlockDiagram(size_t, size_t)") {
   BlockDiagram Blk(5, 4);
   CHECK(Blk.nb_rows() == 5);
@@ -134,17 +132,17 @@ TEST_CASE("read_blocks_char") {
 //     return out;
 // }
 
-std::string BlockDiagram::to_string(std::vector<std::vector<int>> fill) const {
+std::string BlockDiagram::to_string(Vect2D contents) const {
   std::string res = "+";
   for (size_t c = 0; c < nb_cols_; ++c) res += "---+";
   res += "\n";
   for (size_t r = 0; r < nb_rows_; ++r) {
     res += "|";
     for (size_t c = 0; c < nb_cols_; ++c) {
-      if (fill[r][c] == 0) {
+      if (contents[r][c] == 0) {
         res += "   ";
       } else {
-        std::string cont = std::to_string(fill[r][c]);
+        std::string cont = std::to_string(contents[r][c]);
         if (cont.size() < 3) cont.insert(0, " ");
         if (cont.size() < 3) cont += " ";
         res += cont;
