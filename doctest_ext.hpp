@@ -15,9 +15,9 @@
 #ifndef DOCTEST_EXT_HPP_
 #define DOCTEST_EXT_HPP_
 #include <doctest/doctest.h>
+#include <cstdlib>  // exit
 #include <ostream>
-#include <sstream>     // ostringstream
-#include <cstdlib>     // exit
+#include <sstream>  // ostringstream
 
 namespace doctest {
 
@@ -33,8 +33,9 @@ std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
   return out;
 }
 
-template<typename T> struct StringMaker<std::vector<T>> {
-  static String convert(const std::vector<T>& v) {
+template <typename T>
+struct StringMaker<std::vector<T>> {
+  static String convert(const std::vector<T> &v) {
     std::ostringstream os;
     os << v;
     return String(os.str().c_str());
@@ -72,15 +73,13 @@ TEST_CASE("std::vector<std::vector<int>>") {
 TEST_SUITE_END();  // [dlx_matrix]doctest::operator<<(out, std::vector<T>)
 //////////////////////////////////////////////////////////////////////////
 
+inline void run_test(int argc, char **argv) {
+  doctest::Context context;
 
-inline void run_test(int argc, char** argv) {
-    doctest::Context context;
-
-    context.setOption("order-by", "name"); // sort the test cases by their name
-    context.applyCommandLine(argc, argv);
-    int res = context.run();
-    if (context.shouldExit())
-      exit(res);
+  context.setOption("order-by", "name");  // sort the test cases by their name
+  context.applyCommandLine(argc, argv);
+  int res = context.run();
+  if (context.shouldExit()) exit(res);
 }
 
 }  // namespace doctest

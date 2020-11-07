@@ -28,6 +28,7 @@ namespace DLX_backtrack {
 class DLXMatrix {
  public:
   using ind_t = std::size_t;
+
  private:
   struct Header;
   struct Node {
@@ -50,7 +51,6 @@ class DLXMatrix {
   bool search_down_;
 
  public:
-
   using Vect1D = std::vector<ind_t>;
   using Vect2D = std::vector<Vect1D>;
 
@@ -116,22 +116,21 @@ class DLXMatrix {
 };
 
 struct size_mismatch_error : public std::runtime_error {
-  size_mismatch_error(const std::string &s,
-                      DLXMatrix::ind_t expected, DLXMatrix::ind_t sz)
+  size_mismatch_error(const std::string &s, DLXMatrix::ind_t expected,
+                      DLXMatrix::ind_t sz)
       : std::runtime_error("Wrong " + s + " size: " + std::to_string(sz) +
                            " (expecting " + std::to_string(expected) + ")") {}
 };
-void check_size(const std::string &s,
-                DLXMatrix::ind_t expected, DLXMatrix::ind_t sz);
+void check_size(const std::string &s, DLXMatrix::ind_t expected,
+                DLXMatrix::ind_t sz);
 
 struct empty_error : public std::runtime_error {
   empty_error(const std::string &s)
       : std::runtime_error("Empty " + s + " are not allowed") {}
 };
 
-std::vector<DLXMatrix::ind_t>
-inverse_perm(const std::vector<DLXMatrix::ind_t> &perm);
-
+std::vector<DLXMatrix::ind_t> inverse_perm(
+    const std::vector<DLXMatrix::ind_t> &perm);
 
 static_assert(std::is_move_constructible<DLXMatrix>::value,
               "DLXMatrix should be move constructible");

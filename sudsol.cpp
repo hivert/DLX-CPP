@@ -150,13 +150,13 @@ int main(int argc, char *argv[]) {
   }
 
   auto tencode = std::chrono::high_resolution_clock::now();
-  for (int i = 1; i <= sq_size; i++)   // Square i,j occupied
+  for (int i = 1; i <= sq_size; i++)  // Square i,j occupied
     for (int j = 1; j <= sq_size; j++) new_col({'s', i, j});
-  for (int i = 1; i <= sq_size; i++)   // Block i occupied by j
+  for (int i = 1; i <= sq_size; i++)  // Block i occupied by j
     for (int j = 1; j <= sq_size; j++) new_col({'b', i, j});
-  for (int i = 1; i <= sq_size; i++)   // Row i occupied by j
+  for (int i = 1; i <= sq_size; i++)  // Row i occupied by j
     for (int j = 1; j <= sq_size; j++) new_col({'r', i, j});
-  for (int i = 1; i <= sq_size; i++)   // Col i occupied by j
+  for (int i = 1; i <= sq_size; i++)  // Col i occupied by j
     for (int j = 1; j <= sq_size; j++) new_col({'c', i, j});
   for (int i = 0; i < nb_hint; i++) new_col({'e', i, 0});
 
