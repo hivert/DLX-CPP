@@ -11,7 +11,7 @@ all: $(MAIN_FILES)
 
 dlx_matrix.o: dlx_matrix.cpp dlx_matrix.hpp doctest_ext.hpp
 
-libdlx_matrix.o: CXXFLAGS += -fPIC
+libdlx_matrix.o: CXXFLAGS += -fPIC -DDOCTEST_CONFIG_DISABLE
 libdlx_matrix.o: libdlx_matrix.cpp dlx_matrix.hpp doctest_ext.hpp
 libdlx_matrix.so: libdlx_matrix.o
 	$(LINK.c) -shared $^ -o $@
@@ -24,6 +24,7 @@ block_diagram_test: CXXFLAGS += -DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 block_diagram_test: block_diagram.cpp block_diagram.hpp doctest_ext.hpp
 	${CXX} ${CXXFLAGS} block_diagram.cpp -o block_diagram_test
 
+sudsol: CXXFLAGS += -DDOCTEST_CONFIG_DISABLE
 sudsol: dlx_matrix.o
 
 #### Cibles diverses ####

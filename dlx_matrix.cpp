@@ -17,11 +17,6 @@
 //////////////////////////////////////////////////////////////
 #include "dlx_matrix.hpp"
 
-#ifndef DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#ifndef DOCTEST_CONFIG_IMPLEMENT
-#define DOCTEST_CONFIG_DISABLE
-#endif
-#endif
 #include "doctest_ext.hpp"
 
 #include <algorithm>   // sort, transform, shuffle

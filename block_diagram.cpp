@@ -15,12 +15,6 @@
 
 // A class for block diagram with zones such as (Generalized) Sudokus or
 // Tectonics.
-#ifndef DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#ifndef DOCTEST_CONFIG_IMPLEMENT
-#define DOCTEST_CONFIG_DISABLE
-#endif
-#endif
-
 #include "doctest/doctest.h"
 
 #include "block_diagram.hpp"
