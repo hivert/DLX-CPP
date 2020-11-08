@@ -33,7 +33,7 @@ class DLXMatrix {
   struct Header;
   struct Node {
     ind_t row_id;
-    Node *up, *down;
+    Node *left, *right, *up, *down;
     Header *head;
   };
 
@@ -103,15 +103,11 @@ class DLXMatrix {
   Header *master() { return &heads_[0]; }
   const Header *master() const { return &heads_[0]; }
 
-  ind_t pos_in_row(const Node *nd) const {
-    return std::distance(rows_[nd->row_id].data(), nd);
-  }
-
   Header *choose_min();
-  void hide(Header *col);
-  void unhide(Header *col);
-  void cover(Node *row);
-  void uncover(Node *row);
+  void cover(Header *col);
+  void uncover(Header *col);
+  void choose(Node *row);
+  void unchoose(Node *row);
   void search_rec_internal(size_t, Vect2D &);
 
   static Vect1D row_sparse(const std::vector<Node> &);
