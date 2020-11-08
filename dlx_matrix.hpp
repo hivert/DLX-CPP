@@ -104,10 +104,10 @@ class DLXMatrix {
   const Header *master() const { return &heads_[0]; }
 
   Header *choose_min();
-  void cover(Header *col);
-  void uncover(Header *col);
-  void choose(Node *row);
-  void unchoose(Node *row);
+  void hide(Header *col);
+  void unhide(Header *col);
+  void cover(Node *row);
+  void uncover(Node *row);
   void search_rec_internal(size_t, Vect2D &);
 
   static Vect1D row_sparse(const std::vector<Node> &);
