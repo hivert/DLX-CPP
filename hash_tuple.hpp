@@ -13,14 +13,15 @@
 //                  http://www.gnu.org/licenses/                              //
 //****************************************************************************//
 
-#ifndef UTILS_HPP_
-#define UTILS_HPP_
+#ifndef HASH_TUPLE_HPP_
+#define HASH_TUPLE_HPP_
 
 #include <cstddef>     // size_t
 #include <functional>  // hash
 
-namespace std {
-namespace {
+namespace hash_tuple {
+
+template <typename TT> struct hash;
 
 // Code from boost
 // Reciprocal of the golden ratio helps spread entropy
@@ -29,24 +30,31 @@ namespace {
 //     https://stackoverflow.com/questions/4948780
 template <class T>
 inline void hash_combine(size_t &seed, T const &v) {
-  seed ^= hash<T>()(v) + 0x9e3779b9 + (seed << 6u) + (seed >> 2u);
+  seed ^= hash_tuple::hash<T>()(v) + 0x9e3779b9 + (seed << 6u) + (seed >> 2u);
 }
 
 template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
 struct HashValueImpl {
   static void apply(size_t &seed, Tuple const &tuple) {
     HashValueImpl<Tuple, Index - 1>::apply(seed, tuple);
-    hash_combine(seed, get<Index>(tuple));
+    hash_combine(seed, std::get<Index>(tuple));
   }
 };
 
 template <class Tuple>
 struct HashValueImpl<Tuple, 0> {
   static void apply(size_t &seed, Tuple const &tuple) {
-    hash_combine(seed, get<0>(tuple));
+    hash_combine(seed, std::get<0>(tuple));
   }
 };
-}  // anonymous namespace
+
+
+template <typename TT>
+struct hash {
+  size_t operator()(TT const& tt) const {
+        return std::hash<TT>()(tt);
+    }
+};
 
 template <typename... TT>
 struct hash<std::tuple<TT...>> {
@@ -57,6 +65,6 @@ struct hash<std::tuple<TT...>> {
   }
 };
 
-}  // namespace std
+}  // namespace hash_tuple
 
-#endif  // UTILS_HPP_
+#endif  // HASH_TUPLE_HPP_

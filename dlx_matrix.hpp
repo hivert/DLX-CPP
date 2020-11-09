@@ -38,7 +38,7 @@ class DLXMatrix {
   };
 
   struct Header {
-    ind_t col_id, size;
+    ind_t size;
     Node node;
     Header *left, *right;
   };
@@ -103,6 +103,12 @@ class DLXMatrix {
   Header *master() { return &heads_[0]; }
   const Header *master() const { return &heads_[0]; }
 
+  ind_t get_col_id(const Header *h) const {
+    int res = std::distance(master(), h);
+    return (res > 0) ? res - 1 : std::numeric_limits<ind_t>::max();
+  }
+  bool is_primary(const Header *h) const { return get_col_id(h) < nb_primary_; }
+
   Header *choose_min();
   void hide(Header *col);
   void unhide(Header *col);
@@ -110,7 +116,7 @@ class DLXMatrix {
   void uncover(Node *row);
   void search_rec_internal(size_t, Vect2D &);
 
-  static Vect1D row_sparse(const std::vector<Node> &);
+  Vect1D row_sparse(const std::vector<Node> &) const;
   std::vector<bool> row_dense(const std::vector<Node> &) const;
   void print_solution(const std::vector<Node *> &) const;
 };

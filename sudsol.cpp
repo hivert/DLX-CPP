@@ -27,7 +27,7 @@
 #include <vector>
 
 #include "dlx_matrix.hpp"
-#include "utils.hpp"
+#include "hash_tuple.hpp"
 
 namespace cron = std::chrono;
 
@@ -40,7 +40,7 @@ SQMatrix blocks, matrix;
 int row_size, col_size, sq_size, nb_hint;
 std::vector<col_type> col_names;
 std::vector<std::tuple<int, int, int>> row_codes;
-std::unordered_map<col_type, int> col_indices;
+std::unordered_map<col_type, int, hash_tuple::hash<col_type>> col_indices;
 
 void new_col(col_type name) {
   col_indices.insert(std::make_pair(name, col_names.size()));

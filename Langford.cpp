@@ -32,12 +32,7 @@
 
 namespace cron = std::chrono;
 
-char hex(size_t l) {
-  if (l < 10)
-    return '0' + l;
-  else
-    return 'a' + l - 10;
-}
+char hex(size_t l) { return l < 10 ? '0' + l : 'a' + l - 10; }
 
 std::string sol_to_string(size_t N, DLX_backtrack::DLXMatrix &M,
                           DLX_backtrack::DLXMatrix::Vect1D sol) {
@@ -56,7 +51,12 @@ int main(int argc, char *argv[]) {
   size_t N = 4;
   auto tstart = cron::high_resolution_clock::now();
   if (argc == 2) {
-    N = atoi(argv[1]);
+    char *check;
+    N = strtol(argv[1], &check, 10);
+    if (*check != '\0') {
+      std::cerr << "bad argument: " << argv[1] << std::endl;
+      exit(EXIT_FAILURE);
+    }
   }
   if (argc > 2) {
     std::cerr << "Too many argument : " << argc << std::endl;
