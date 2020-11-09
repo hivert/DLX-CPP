@@ -1,5 +1,5 @@
 ---
-Checks:          '*,-fuchsia*,-hicpp-braces-around-statements,-readability-braces-around-statements'
+Checks:          '*,-fuchsia*,-hicpp-braces-around-statements,-readability-braces-around-statements,-google-runtime-references'
 # Checks:          'clang-diagnostic-*,clang-analyzer-*'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''

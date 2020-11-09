@@ -20,11 +20,11 @@
 #include "doctest_ext.hpp"
 
 #include <algorithm>   // sort, transform, shuffle
-#include <functional>  // bind, equal_to, _2
 #include <iostream>    // cout, cin, ...
-#include <sstream>     // ostringstream
+#include <limits>      // numeric_limits
 #include <numeric>     // iota
 #include <random>      // default_random_engine
+#include <sstream>     // ostringstream
 #include <stdexcept>   // out_of_range
 #include <vector>      // vector
 
@@ -134,10 +134,10 @@ std::string DLXMatrix::to_string() const {
   std::string res;
   for (const auto &row : rows_) {
     auto r = row_dense(row);
-    res += "[" + std::to_string(r[0]);
+    res += "[" + std::to_string(static_cast<int>(r[0]));
     for (size_t i = 1; i < r.size(); ++i) {
       res += i == nb_primary_ ? " | " : ", ";
-      res += std::to_string(r[i]);
+      res += std::to_string(static_cast<int>(r[i]));
     }
     res += "]\n";
   }
@@ -465,7 +465,6 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_dense") {
 }
 
 bool DLXMatrix::is_solution(const Vect1D &sol) {
-  using std::placeholders::_1;
   Vect1D cols(nb_cols());
   for (ind_t r : sol) {
     std::transform(cols.begin(), cols.end(), row_dense(r).begin(), cols.begin(),

@@ -18,8 +18,8 @@
 #ifndef DLX_MATRIX_HPP_
 #define DLX_MATRIX_HPP_
 
-#include <climits>
 #include <iostream>
+#include <limits>      // numeric_limits
 #include <vector>
 
 namespace DLX_backtrack {
@@ -125,7 +125,7 @@ void check_size(const std::string &s, DLXMatrix::ind_t expected,
                 DLXMatrix::ind_t sz);
 
 struct empty_error : public std::runtime_error {
-  empty_error(const std::string &s)
+  explicit empty_error(const std::string &s)
       : std::runtime_error("Empty " + s + " are not allowed") {}
 };
 

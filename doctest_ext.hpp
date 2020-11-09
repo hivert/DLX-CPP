@@ -14,10 +14,12 @@
 //****************************************************************************//
 #ifndef DOCTEST_EXT_HPP_
 #define DOCTEST_EXT_HPP_
-#include <doctest/doctest.h>
+
 #include <cstdlib>  // exit
+#include <doctest/doctest.h>
 #include <ostream>
 #include <sstream>  // ostringstream
+#include <vector>
 
 namespace doctest {
 
@@ -50,7 +52,7 @@ TEST_CASE("std::vector<bool>") {
   os << std::vector<bool>({});
   CHECK(os.str() == "[]");
   os.str("");
-  os << std::vector<bool>({1, 0, 1, 1});
+  os << std::vector<bool>({true, false, true, true});
   CHECK(os.str() == "[1, 0, 1, 1]");
 }
 TEST_CASE("std::vector<int>") {
