@@ -22,10 +22,10 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
-#include <string>
 
 #include "dlx_matrix.hpp"
 #include "utils.hpp"
@@ -33,24 +33,24 @@
 namespace cron = std::chrono;
 
 char hex(size_t l) {
-  if (l < 10) return '0' + l;
-  else return 'a' + l - 10;
+  if (l < 10)
+    return '0' + l;
+  else
+    return 'a' + l - 10;
 }
 
-std::string sol_to_string(size_t N,
-                          DLX_backtrack::DLXMatrix &M,
+std::string sol_to_string(size_t N, DLX_backtrack::DLXMatrix &M,
                           DLX_backtrack::DLXMatrix::Vect1D sol) {
-  std::string res(2*N, '_');
+  std::string res(2 * N, '_');
   for (size_t irow : sol) {
     auto row = M.row_sparse(irow);
     size_t l = row[0] + 1;
     size_t pos1 = row[1] - N;
     res[pos1] = hex(l);
-    res[pos1+l+1] = hex(l);
+    res[pos1 + l + 1] = hex(l);
   }
   return res;
 }
-
 
 int main(int argc, char *argv[]) {
   size_t N = 4;
@@ -59,12 +59,12 @@ int main(int argc, char *argv[]) {
     N = atoi(argv[1]);
   }
   if (argc > 2) {
-      std::cerr << "Too many argument : " << argc << std::endl;
-      exit(EXIT_FAILURE);
+    std::cerr << "Too many argument : " << argc << std::endl;
+    exit(EXIT_FAILURE);
   }
 
   auto tencode = std::chrono::high_resolution_clock::now();
-  DLX_backtrack::DLXMatrix M(3*N);
+  DLX_backtrack::DLXMatrix M(3 * N);
 
   // ‘i sj sk’, for 1 ≤ j < k ≤ 2n, k = i + j + 1, 1 ≤ i ≤ n;
 
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   // - n .. 3n - 1 : place i + 1 - n used
 
   for (size_t i = 1; i <= N; i++) {
-    for (size_t pos = 1; pos + i + 1 <= 2*N; pos++) {
+    for (size_t pos = 1; pos + i + 1 <= 2 * N; pos++) {
       M.add_row({i - 1, N + pos - 1, N + pos + i});
     }
   }
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   auto endcompute = cron::high_resolution_clock::now();
 
   std::cout << "Number of solutions: " << nsol << std::endl;
-   auto endprint = cron::high_resolution_clock::now();
+  auto endprint = cron::high_resolution_clock::now();
   std::cout << "# Number of choices: " << M.nb_choices
             << ", Number of dances: " << M.nb_dances << "\n";
   std::cout << std::fixed << std::setprecision(0) << "# Timings: parse = "
@@ -106,5 +106,4 @@ int main(int argc, char *argv[]) {
             << "μs\n# Total = "
             << cron::duration<float, std::micro>(endprint - tstart).count()
             << "μs\n";
-} 
-
+}
