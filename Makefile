@@ -44,6 +44,7 @@ sudsol: dlx_matrix.o
 Langford: CXXFLAGS += -DDOCTEST_CONFIG_DISABLE
 Langford: dlx_matrix.o
 
+
 #### Cibles diverses ####
 .PHONY: clean tags check
 
