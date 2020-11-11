@@ -27,27 +27,26 @@ namespace DLX_backtrack {
 /////////////////
 class DLXMatrix {
  public:
-  using ind_t = std::size_t;
+  using ind_t = int;
 
  private:
-  struct Header;
   struct Node {
-    ind_t row_id;
-    Node *left, *right, *up, *down;
-    Header *head;
+    int top;
+    int up, down;
+
+    int &size() { return top; }
+    int size() const { return top; }
   };
 
   struct Header {
-    ind_t size;
-    Node node;
-    Header *left, *right;
+    int left, right;
   };
 
-  ind_t nb_primary_;
+  int nb_primary_;
   std::vector<Header> heads_;
-  std::vector<std::vector<Node>> rows_;
+  std::vector<Node> rows_;
 
-  std::vector<Node *> work_;
+  std::vector<int> work_;
   bool search_down_;
 
  public:
@@ -60,15 +59,15 @@ class DLXMatrix {
   DLXMatrix(ind_t nb_col, const Vect2D &rows)
       : DLXMatrix(nb_col, nb_col, rows) {}
   DLXMatrix(ind_t nb_col, ind_t nb_primary, const Vect2D &rows);
-  DLXMatrix(const DLXMatrix &);
-  DLXMatrix &operator=(const DLXMatrix &other);
+  DLXMatrix(const DLXMatrix &) = default;
+  DLXMatrix &operator=(const DLXMatrix &other) = default;
   DLXMatrix(DLXMatrix &&) = default;
   DLXMatrix &operator=(DLXMatrix &&other) = default;
   ~DLXMatrix() = default;
 
-  size_t nb_cols() const { return heads_.size() - 1; }
-  size_t nb_rows() const { return rows_.size(); }
-  size_t nb_primary() const { return nb_primary_; }
+  int nb_cols() const { return heads_.size() - 1; }
+  int nb_rows() const { return -rows_.back().top; }
+  int nb_primary() const { return nb_primary_; }
 
   void check_sizes() const;
 
@@ -84,7 +83,7 @@ class DLXMatrix {
   Vect2D search_rec(size_t max_sol = std::numeric_limits<size_t>::max());
   bool search_iter();
   bool search_iter(Vect1D &);
-  Vect1D get_solution();
+  Vect1D get_solution(bool sorted = true);
   bool search_random(Vect1D &);
 
   bool is_solution(const Vect1D &);
@@ -99,26 +98,42 @@ class DLXMatrix {
 
   int nb_choices, nb_dances;  // Computation statistics
 
+  void debug();
+
  protected:
   Header *master() { return &heads_[0]; }
   const Header *master() const { return &heads_[0]; }
 
-  ind_t get_col_id(const Header *h) const {
-    int res = std::distance(master(), h);
-    return (res > 0) ? res - 1 : std::numeric_limits<ind_t>::max();
+  ind_t get_col_id(int h) const {
+    return (h > 0) ? h - 1 : std::numeric_limits<ind_t>::max();
   }
-  bool is_primary(const Header *h) const { return get_col_id(h) < nb_primary_; }
+  bool is_primary(int h) const { return get_col_id(h) < nb_primary_; }
 
-  Header *choose_min();
-  void hide(Header *col);
-  void unhide(Header *col);
-  void cover(Node *row);
-  void uncover(Node *row);
+  int next_in_row(int nd) {
+    if (rows_[nd].top <= 0) return -1;
+    ++nd;
+    return rows_[nd].top <= 0 ? rows_[nd].up : nd;
+  }
+  int prev_in_row(int nd) {
+    if (rows_[nd].top <= 0) return -1;
+    --nd;
+    return rows_[nd].top <= 0 ? rows_[nd].down : nd;
+  }
+  int row_id(int nd) {
+    if (rows_[nd].top <= 0) return -1;
+    while (rows_[nd].top > 0) nd--;
+    return -rows_[nd].top;
+  }
+  int choose_min();
+  void hide(int row);
+  void unhide(int row);
+  void cover(int col);
+  void uncover(int col);
+  void choose(int nd);
+  void unchoose(int nd);
   void search_rec_internal(size_t, Vect2D &);
 
-  Vect1D row_sparse(const std::vector<Node> &) const;
-  std::vector<bool> row_dense(const std::vector<Node> &) const;
-  void print_solution(const std::vector<Node *> &) const;
+  void print_solution(const std::vector<int> &) const;
 };
 
 struct size_mismatch_error : public std::runtime_error {

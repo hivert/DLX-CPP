@@ -20,6 +20,7 @@
 #include "doctest_ext.hpp"
 
 #include <algorithm>   // sort, transform, shuffle
+#include <iomanip>
 #include <iostream>    // cout, cin, ...
 #include <limits>      // numeric_limits
 #include <numeric>     // iota
@@ -127,12 +128,52 @@ class DLXMatrixFixture {
   std::vector<DLXMatrix> TestSample;
 };
 
+void DLXMatrix::debug() {
+   // std::cout << *this << std::endl;
+  std::cout << "i    ";
+  for (int i = 0; i < int(rows_.size()); i++) {
+    std::cout << std::setw(3) << i;
+  }
+  std::cout << std::endl;
+  std::cout << "top  ";
+  for (int i = 0; i < int(rows_.size()); i++) {
+    std::cout << std::setw(3) << rows_[i].top;
+  }
+  std::cout << std::endl;
+  std::cout << "up   ";
+  for (int i = 0; i < int(rows_.size()); i++) {
+    std::cout << std::setw(3) << rows_[i].up;
+  }
+  std::cout << std::endl;
+  std::cout << "down ";
+  for (int i = 0; i < int(rows_.size()); i++) {
+    std::cout << std::setw(3) << rows_[i].down;
+  }
+  std::cout << std::endl;
+  std::cout << "rid  ";
+  for (int i = 0; i < int(rows_.size()); i++) {
+    std::cout << std::setw(3) << row_id(i);
+  }
+  std::cout << std::endl;
+  std::cout << "next ";
+  for (int i = 0; i < int(rows_.size()); i++) {
+    std::cout << std::setw(3) << next_in_row(i);
+  }
+  std::cout << std::endl;
+  std::cout << "prev ";
+  for (int i = 0; i < int(rows_.size()); i++) {
+    std::cout << std::setw(3) << prev_in_row(i);
+  }
+  std::cout << std::endl;
+}
+
+
 std::string DLXMatrix::to_string() const {
   std::string res;
-  for (const auto &row : rows_) {
+  for (int row = 0; row < nb_rows(); row++) {
     auto r = row_dense(row);
     res += "[" + std::to_string(static_cast<int>(r[0]));
-    for (size_t i = 1; i < r.size(); ++i) {
+    for (int i = 1, sz = r.size(); i < sz; ++i) {
       res += i == nb_primary_ ? " | " : ", ";
       res += std::to_string(static_cast<int>(r[i]));
     }
@@ -154,25 +195,22 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "DLXMatrix::operator<<") {
 DLXMatrix::DLXMatrix(ind_t nb_col, ind_t nb_primary)
     : nb_primary_(std::min(nb_col, nb_primary)),
       heads_(nb_col + 1),
+      rows_(nb_col + 2),
       search_down_(true),
       nb_choices(0),
       nb_dances(0) {
-  for (ind_t i = 0; i <= nb_col; i++) {
-    heads_[i].size = 0;
-    heads_[i].node.up = heads_[i].node.down = &heads_[i].node;
-    // heads_[i].node.head = &heads_[i];  // unused
-    // heads_[i].node.row_id = -1  // unused;
-    // heads_[i].node.left = heads_[i].node.right = nullptr;  // unused
+  for (int i = 0; i <= nb_col; i++) {
+    heads_[i].right = i + 1;
+    heads_[i].left = i - 1;
   }
-  heads_[nb_col].right = &heads_[0];
-  for (ind_t i = 0; i < nb_col; i++) heads_[i].right = &heads_[i + 1];
-  heads_[0].left = &heads_[nb_col];
-  // heads_[0].col_id =  // large enough sentinel value for choose_min
-  //    std::numeric_limits<ind_t>::max();
-  for (ind_t i = 1; i <= nb_col; i++) {
-    // heads_[i].col_id = i - 1;
-    heads_[i].left = &heads_[i - 1];
+  heads_[0].left = nb_col;
+  heads_[nb_col].right = 0;
+  for (int i = 1; i <= nb_col; i++) {
+    rows_[i].size() = 0;
+    rows_[i].up = rows_[i].down = i;
   }
+  rows_[nb_col+1].top = 0;
+  rows_[nb_col+1].down = -1;  // Sentinel
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Constructor DLXMatrix(ind_t)") {
   CHECK(empty0.nb_cols() == 0);
@@ -194,7 +232,6 @@ TEST_CASE("Constructor DLXMatrix(ind_t, ind_t)") {
   CHECK(M56.nb_cols() == 5);
   CHECK(M56.nb_primary() == 5);
 }
-
 DLXMatrix::DLXMatrix(ind_t nb_col, ind_t nb_primary, const Vect2D &rows)
     : DLXMatrix(nb_col, nb_primary) {
   for (const auto &r : rows) add_row_sparse(r);
@@ -224,34 +261,6 @@ TEST_CASE("Constructor DLXMatrix(ind_t, ind_t, const Vect2D &))") {
   }
 }
 
-DLXMatrix::DLXMatrix(const DLXMatrix &other)
-    : DLXMatrix(other.nb_cols(), other.nb_primary_) {
-  for (const auto &row : other.rows_) add_row_sparse(other.row_sparse(row));
-  for (const Node *nother : other.work_) {
-    ind_t id = nother->row_id;
-    Node *node = &rows_[id][std::distance(other.rows_[id].data(), nother)];
-    hide(node->head);
-    cover(node);
-  }
-  search_down_ = other.search_down_;
-  nb_choices = other.nb_choices;
-  nb_dances = other.nb_dances;
-}
-TEST_CASE_FIXTURE(DLXMatrixFixture, "DLXMatrix copy constructor") {
-  for (const DLXMatrix &M : TestSample) {
-    CAPTURE(M);
-    DLXMatrix N(M);
-    CHECK(N.nb_cols() == M.nb_cols());
-    REQUIRE(N.nb_rows() == M.nb_rows());
-    for (ind_t i = 0; i < M.nb_rows(); i++)
-      CHECK(N.row_sparse(i) == M.row_sparse(i));
-    // Check that modifying the copy doesn't change the original
-    if (N.nb_cols() != 0) {
-      N.add_row_sparse({0});
-      REQUIRE(N.nb_rows() == M.nb_rows() + 1);
-    }
-  }
-}
 TEST_CASE_FIXTURE(DLXMatrixFixture, "DLXMatrix move constructor/assignement") {
   DLXMatrix M = std::move(M5_3);
   CHECK(M.nb_cols() == 5);
@@ -264,17 +273,6 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "DLXMatrix move constructor/assignement") {
   CHECK(empty5.nb_cols() == 0);
 }
 
-DLXMatrix &DLXMatrix::operator=(const DLXMatrix &other) {
-  DLXMatrix res(other);
-  nb_primary_ = res.nb_primary_;
-  heads_ = std::move(res.heads_);
-  rows_ = std::move(res.rows_);
-  work_ = std::move(res.work_);
-  search_down_ = res.search_down_;
-  nb_choices = res.nb_choices;
-  nb_dances = res.nb_dances;
-  return *this;
-}
 TEST_CASE_FIXTURE(DLXMatrixFixture, "DLXMatrix::operator=") {
   for (const DLXMatrix &M : TestSample) {
     CAPTURE(M);
@@ -287,14 +285,17 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "DLXMatrix::operator=") {
   }
 }
 
-Vect1D DLXMatrix::row_sparse(const std::vector<Node> &row) const {
-  Vect1D r;
-  r.reserve(row.size());
-  std::transform(row.begin(), row.end(), std::back_inserter(r),
-                 [this](const Node &n) -> ind_t { return get_col_id(n.head); });
-  return r;
+Vect1D DLXMatrix::row_sparse(ind_t i) const {
+  if (!(0 <= i && i < nb_rows()))
+      throw std::out_of_range("row_sparse");
+  int pos;
+  for (pos = nb_cols() + 1; -rows_[pos].top != i; pos = rows_[pos].down+1) { };
+  Vect1D res;
+  for (int j = pos+1; j <= rows_[pos].down; j++) {
+    res.push_back(rows_[j].top-1);
+  }
+  return res;
 }
-Vect1D DLXMatrix::row_sparse(ind_t i) const { return row_sparse(rows_.at(i)); }
 TEST_CASE("Method row_sparse") {
   DLXMatrix M(5, {{0, 1}, {2, 3, 4}, {1, 2, 4}});
   CHECK(M.row_sparse(0) == Vect1D({0, 1}));
@@ -302,11 +303,8 @@ TEST_CASE("Method row_sparse") {
   CHECK(M.row_sparse(2) == Vect1D({1, 2, 4}));
 }
 
-std::vector<bool> DLXMatrix::row_dense(const std::vector<Node> &row) const {
-  return row_to_dense(DLXMatrix::row_sparse(row));
-}
 std::vector<bool> DLXMatrix::row_dense(ind_t i) const {
-  return row_dense(rows_.at(i));
+  return row_to_dense(row_sparse(i));
 }
 TEST_CASE("Method row_dense") {
   DLXMatrix M(5, {{0, 1}, {2, 3, 4}, {1, 2, 4}});
@@ -315,11 +313,19 @@ TEST_CASE("Method row_dense") {
   CHECK(M.row_dense(2) == std::vector<bool>({0, 1, 1, 0, 1}));
 }
 
+/* print_node:
+    std::cout << "rows_[" << i << "] : top : " << rows_[i].top
+              << " size : " << rows_[i].size()
+              << " up : " << rows_[i].up
+              << " down : " << rows_[i].down << std::endl;
+
+*/
 void DLXMatrix::check_sizes() const {
-  for (Header *h = master()->right; h != master(); h = h->right) {
-    ind_t irows = 0;
-    for (Node *p = h->node.down; p != &h->node; p = p->down) irows++;
-    check_size("column", h->size, irows);
+  for (int i = 1; i <= nb_cols(); i++) {
+    int sz = 0;
+    for (int nd = rows_[i].down; nd != i; nd = rows_[nd].down)
+      sz ++;
+    check_size("column", rows_[i].size(), sz);
   }
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method check_sizes") {
@@ -332,25 +338,21 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method check_sizes") {
 ind_t DLXMatrix::add_row_sparse(const Vect1D &r) {
   if (r.empty()) throw empty_error("rows");
   // Check for bound before modifying anything
-  for (ind_t i : r) heads_.at(i + 1);
+  for (int i : r) heads_.at(i + 1);
 
-  ind_t row_id = rows_.size();
-  rows_.emplace_back(r.size());
-  std::vector<Node> &row = rows_.back();
-
+  int oldsize = rows_.size();
+  int row_id = -rows_.back().top;
+  rows_.resize(oldsize + r.size() + 1);
   for (size_t i = 0; i < r.size(); i++) {
-    auto &h = heads_[r[i] + 1];
-    row[i].row_id = row_id;
-    row[i].head = &h;
-    h.size++;
-    row[i].down = &h.node;
-    row[i].up = h.node.up;
-    row[i].up->down = h.node.up = &row[i];
+    Node &newnode = rows_[oldsize + i];
+    Node &head = rows_[r[i] + 1];
+    head.size()++;
+    newnode = {.top = r[i] + 1, .up = head.up, .down = r[i] + 1};
+    rows_[newnode.up].down = oldsize + i;
+    head.up = oldsize + i;
   }
-  row.back().right = &row[0];
-  for (size_t i = 0; i < r.size() - 1; i++) row[i].right = &row[i + 1];
-  row[0].left = &row.back();
-  for (size_t i = 1; i < r.size(); i++) row[i].left = &row[i - 1];
+  rows_.back()= {.top = -(row_id+1), .up = oldsize, .down = -1 /* Sentinel */};
+  rows_[oldsize-1].down = rows_.size() - 2;
   return row_id;
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_sparse") {
@@ -364,7 +366,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_sparse") {
         CHECK(rid == MSave.nb_rows());
         CHECK(M.nb_cols() == MSave.nb_cols());
         REQUIRE(M.nb_rows() == MSave.nb_rows() + 1);
-        for (ind_t i = 0; i < MSave.nb_rows(); i++)
+        for (int i = 0; i < MSave.nb_rows(); i++)
           CHECK(M.row_sparse(i) == MSave.row_sparse(i));
         CHECK(M.row_sparse(MSave.nb_rows()) == Vect1D({2, 3}));
         CHECK_NOTHROW(M.check_sizes());
@@ -513,49 +515,57 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method is_solution") {
   }
 }
 
-void DLXMatrix::hide(Header *col) {
-  col->left->right = col->right;
-  col->right->left = col->left;
-
-  for (Node *row = col->node.down; row != &col->node; row = row->down) {
-    for (Node *nr = row->right; nr != row; nr = nr->right) {
-      nr->up->down = nr->down;
-      nr->down->up = nr->up;
-      nr->head->size--;
-      nb_dances++;
-    }
+void DLXMatrix::hide(int row) {
+  for (int nr = next_in_row(row); nr != row; nr = next_in_row(nr)) {
+    rows_[rows_[nr].up].down = rows_[nr].down;
+    rows_[rows_[nr].down].up = rows_[nr].up;
+    rows_[rows_[nr].top].size()--;
+    nb_dances++;
   }
 }
-void DLXMatrix::cover(Node *row) {
+void DLXMatrix::cover(int col) {
+  heads_[heads_[col].left].right = heads_[col].right;
+  heads_[heads_[col].right].left = heads_[col].left;
+  for (int row = rows_[col].down; row != col; row = rows_[row].down) {
+    hide(row);
+  }
+}
+void DLXMatrix::choose(int nd) {
   nb_choices++;
-  work_.push_back(row);
-  for (Node *nr = row->right; nr != row; nr = nr->right) hide(nr->head);
+  work_.push_back(nd);
+  for (int nr = next_in_row(nd); nr != nd; nr = next_in_row(nr))
+    cover(rows_[nr].top);
 }
 
-void DLXMatrix::unhide(Header *col) {
-  col->left->right = col;
-  col->right->left = col;
 
-  for (Node *row = col->node.up; row != &col->node; row = row->up) {
-    for (Node *nr = row->left; nr != row; nr = nr->left) {
-      nr->head->size++;
-      nr->up->down = nr;
-      nr->down->up = nr;
-    }
+void DLXMatrix::unhide(int row) {
+  for (int nr = prev_in_row(row); nr != row; nr = prev_in_row(nr)) {
+    rows_[rows_[nr].top].size()++;
+    rows_[rows_[nr].up].down = nr;
+    rows_[rows_[nr].down].up = nr;
   }
 }
-void DLXMatrix::uncover(Node *row) {
-  for (Node *nr = row->left; nr != row; nr = nr->left) unhide(nr->head);
+
+void DLXMatrix::uncover(int col) {
+  heads_[heads_[col].left].right = col;
+  heads_[heads_[col].right].left = col;
+  for (int row = rows_[col].down; row != col; row = rows_[row].down)
+    unhide(row);
+}
+
+void DLXMatrix::unchoose(int nd) {
+  for (int nr = prev_in_row(nd); nr != nd; nr = prev_in_row(nr))
+    uncover(rows_[nr].top);
   work_.pop_back();
 }
 
-DLXMatrix::Header *DLXMatrix::choose_min() {
-  Header *choice = master()->right;
-  ind_t min_size = choice->size;
-  for (Header *h = choice->right; is_primary(h); h = h->right) {
-    if (h->size < min_size) {
+int DLXMatrix::choose_min() {
+  int choice = heads_[0].right;
+  ind_t min_size = rows_[choice].size();
+  for (int h = heads_[choice].right; is_primary(h); h = heads_[h].right) {
+    if (rows_[choice].size() < min_size) {
       choice = h;
-      min_size = h->size;
+      min_size = rows_[choice].size();
     }
   }
   return choice;
@@ -571,22 +581,22 @@ Vect2D DLXMatrix::search_rec(size_t max_sol) {
   return res;
 }
 void DLXMatrix::search_rec_internal(size_t max_sol, Vect2D &res) {
-  if (size_t(std::distance(master(), master()->right)) - 1 >= nb_primary_) {
+  if (heads_[0].right == 0 || heads_[0].right > nb_primary_) {
     res.push_back(get_solution());
     return;
   }
 
-  Header *choice = choose_min();
-  if (choice->size == 0) return;
+  int choice = choose_min();
+  if (rows_[choice].size() == 0) return;
 
-  hide(choice);
-  for (Node *row = choice->node.down; row != &choice->node; row = row->down) {
-    cover(row);
+  cover(choice);
+  for (int row = rows_[choice].down; row != choice; row = rows_[row].down) {
+    choose(row);
     search_rec_internal(max_sol, res);
-    uncover(row);
+    unchoose(row);
     if (res.size() >= max_sol) break;
   }
-  unhide(choice);
+  uncover(choice);
 }
 
 DLXMatrix::Vect2D normalize_solutions(DLXMatrix::Vect2D sols) {
@@ -630,27 +640,27 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method search_rec") {
 bool DLXMatrix::search_iter() {
   while (search_down_ || !work_.empty()) {
     if (search_down_) {  // going down the recursion
-      if (size_t(std::distance(master(), master()->right)) - 1 >= nb_primary_) {
+      if (heads_[0].right == 0 || heads_[0].right > nb_primary_) {
         search_down_ = false;
         return true;
       }
-      Header *choice = choose_min();
-      if (choice->size == 0) {
+      int choice = choose_min();
+      if (rows_[choice].size() == 0) {
         search_down_ = false;
       } else {
-        hide(choice);
-        cover(choice->node.down);
+        cover(choice);
+        choose(rows_[choice].down);
       }
     } else {  // going up the recursion
-      Node *row = work_.back();
-      Header *choice = row->head;
-      uncover(row);
-      row = row->down;
-      if (row != &choice->node) {
-        cover(row);
+      int row = work_.back();
+      int choice = rows_[row].top;
+      unchoose(row);
+      row = rows_[row].down;
+      if (row != choice) {
+        choose(row);
         search_down_ = true;
       } else {
-        unhide(choice);
+        uncover(choice);
       }
     }
   }
@@ -692,27 +702,28 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method search_iter") {
   }
 }
 
-Vect1D DLXMatrix::get_solution() {
+Vect1D DLXMatrix::get_solution(bool sorted) {
   Vect1D r;
   r.reserve(work_.size());
   std::transform(work_.begin(), work_.end(), std::back_inserter(r),
-                 [](Node *n) -> ind_t { return n->row_id; });
+                 [this](int n) -> int { return row_id(n); });
+  if (sorted) std::sort(r.begin(), r.end());
   return r;
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method get_solution") {
   CHECK(M6_10.get_solution() == Vect1D({}));
   REQUIRE(M6_10.search_iter());
-  CHECK(M6_10.get_solution() == Vect1D({5, 0, 2, 3}));
+  CHECK(M6_10.get_solution() == Vect1D({0, 2, 3, 5}));
   REQUIRE(M6_10.search_iter());
-  CHECK(M6_10.get_solution() == Vect1D({5, 0, 6, 4}));
+  CHECK(M6_10.get_solution() == Vect1D({0, 4, 5, 6}));
 }
 
 void DLXMatrix::reset() {
   nb_choices = nb_dances = 0;
   while (!work_.empty()) {
-    Node *row = work_.back();
-    uncover(row);
-    unhide(row->head);
+    int row = work_.back();
+    unchoose(row);
+    uncover(rows_[row].top);
   }
   search_down_ = true;
 }
@@ -726,7 +737,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method reset") {
   while (N.search_iter()) solN.push_back(N.get_solution());
   CHECK(solN == solM);
 }
-
+/*
 DLXMatrix DLXMatrix::permuted_inv_columns(const Vect1D &perm) {
   check_size("permutation", perm.size(), nb_cols());
   DLXMatrix res(nb_cols());
@@ -850,7 +861,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method search_random") {
     CHECK(M6_10.is_solution(sol));
   }
 }
-
+*/
 ////////////////////////////////////////////////////
 TEST_SUITE_END();  // "[dlx_matrix]class DLXMatrix";
 ////////////////////////////////////////////////////
