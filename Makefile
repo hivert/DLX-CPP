@@ -17,7 +17,7 @@ CFLAGS = -Wall $(DEBUG)
 CXXFLAGS= -Wall -std=c++17 -g -O3
 
 
-MAIN_FILES = sudsol dlx_matrix_test block_diagram_test
+MAIN_FILES = sudsol Langford dlx_matrix_test block_diagram_test
 
 #### Dépendances ####
 .PHONY: clean all

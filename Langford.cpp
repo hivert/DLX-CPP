@@ -28,7 +28,6 @@
 #include <vector>
 
 #include "dlx_matrix.hpp"
-#include "utils.hpp"
 
 namespace cron = std::chrono;
 
