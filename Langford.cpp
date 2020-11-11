@@ -31,12 +31,12 @@
 
 namespace cron = std::chrono;
 
-char hex(size_t l) { return l < 10 ? '0' + l : 'a' + l - 10; }
+char hex(int l) { return l < 10 ? '0' + l : 'a' + l - 10; }
 
 std::string sol_to_string(size_t N, DLX_backtrack::DLXMatrix &M,
                           DLX_backtrack::DLXMatrix::Vect1D sol) {
   std::string res(2 * N, '_');
-  for (size_t irow : sol) {
+  for (int irow : sol) {
     auto row = M.row_sparse(irow);
     size_t l = row[0] + 1;
     size_t pos1 = row[1] - N;
@@ -47,7 +47,7 @@ std::string sol_to_string(size_t N, DLX_backtrack::DLXMatrix &M,
 }
 
 int main(int argc, char *argv[]) {
-  size_t N = 4;
+  int N = 4;
   auto tstart = cron::high_resolution_clock::now();
   if (argc == 2) {
     char *check;
@@ -71,15 +71,15 @@ int main(int argc, char *argv[]) {
   // - 0..n-1 : letter l+1 used
   // - n .. 3n - 1 : place i + 1 - n used
 
-  for (size_t i = 1; i <= N; i++) {
-    for (size_t pos = 1; pos + i + 1 <= 2 * N; pos++) {
+  for (int i = 1; i <= N; i++) {
+    for (int pos = 1; pos + i + 1 <= 2 * N; pos++) {
       M.add_row({i - 1, N + pos - 1, N + pos + i});
     }
   }
   // std::cout << M << std::endl;
 
   auto tcompute = std::chrono::high_resolution_clock::now();
-  std::vector<size_t> soldance;
+  std::vector<int> soldance;
   if (!M.search_iter(soldance)) {
     std::cout << "No solution found !" << std::endl;
     exit(EXIT_FAILURE);
