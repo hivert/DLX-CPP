@@ -110,10 +110,12 @@ class DLXMatrix {
   bool is_primary(const Header *h) const { return get_col_id(h) < nb_primary_; }
 
   Header *choose_min();
-  void hide(Header *col);
-  void unhide(Header *col);
-  void cover(Node *row);
-  void uncover(Node *row);
+  void hide(Node *row);
+  void unhide(Node *row);
+  void cover(Header *col);
+  void uncover(Header *col);
+  void choose(Node *nd);
+  void unchoose(Node *nd);
   void search_rec_internal(size_t, Vect2D &);
 
   Vect1D row_sparse(const std::vector<Node> &) const;

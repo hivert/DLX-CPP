@@ -230,8 +230,8 @@ DLXMatrix::DLXMatrix(const DLXMatrix &other)
   for (const Node *nother : other.work_) {
     ind_t id = nother->row_id;
     Node *node = &rows_[id][std::distance(other.rows_[id].data(), nother)];
-    hide(node->head);
-    cover(node);
+    cover(node->head);
+    choose(node);
   }
   search_down_ = other.search_down_;
   nb_choices = other.nb_choices;
@@ -513,39 +513,44 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method is_solution") {
   }
 }
 
-void DLXMatrix::hide(Header *col) {
-  col->left->right = col->right;
-  col->right->left = col->left;
-
-  for (Node *row = col->node.down; row != &col->node; row = row->down) {
-    for (Node *nr = row->right; nr != row; nr = nr->right) {
-      nr->up->down = nr->down;
-      nr->down->up = nr->up;
-      nr->head->size--;
-      nb_dances++;
-    }
+inline void DLXMatrix::hide(Node *row) {
+  for (Node *nr = row->right; nr != row; nr = nr->right) {
+    nr->up->down = nr->down;
+    nr->down->up = nr->up;
+    nr->head->size--;
+    nb_dances++;
   }
 }
-void DLXMatrix::cover(Node *row) {
+inline void DLXMatrix::cover(Header *col) {
+  col->left->right = col->right;
+  col->right->left = col->left;
+  for (Node *row = col->node.down; row != &col->node; row = row->down) {
+    hide(row);
+  }
+}
+inline void DLXMatrix::choose(Node *nd) {
   nb_choices++;
-  work_.push_back(row);
-  for (Node *nr = row->right; nr != row; nr = nr->right) hide(nr->head);
+  work_.push_back(nd);
+  for (Node *nr = nd->right; nr != nd; nr = nr->right) cover(nr->head);
 }
 
-void DLXMatrix::unhide(Header *col) {
+inline void DLXMatrix::unhide(Node *row) {
+  for (Node *nr = row->left; nr != row; nr = nr->left) {
+    nr->head->size++;
+    nr->up->down = nr;
+    nr->down->up = nr;
+  }
+}
+inline void DLXMatrix::uncover(Header *col) {
   col->left->right = col;
   col->right->left = col;
 
   for (Node *row = col->node.up; row != &col->node; row = row->up) {
-    for (Node *nr = row->left; nr != row; nr = nr->left) {
-      nr->head->size++;
-      nr->up->down = nr;
-      nr->down->up = nr;
-    }
+    unhide(row);
   }
 }
-void DLXMatrix::uncover(Node *row) {
-  for (Node *nr = row->left; nr != row; nr = nr->left) unhide(nr->head);
+inline void DLXMatrix::unchoose(Node *nd) {
+  for (Node *nr = nd->left; nr != nd; nr = nr->left) uncover(nr->head);
   work_.pop_back();
 }
 
@@ -579,14 +584,14 @@ void DLXMatrix::search_rec_internal(size_t max_sol, Vect2D &res) {
   Header *choice = choose_min();
   if (choice->size == 0) return;
 
-  hide(choice);
+  cover(choice);
   for (Node *row = choice->node.down; row != &choice->node; row = row->down) {
-    cover(row);
+    choose(row);
     search_rec_internal(max_sol, res);
-    uncover(row);
+    unchoose(row);
     if (res.size() >= max_sol) break;
   }
-  unhide(choice);
+  uncover(choice);
 }
 
 DLXMatrix::Vect2D normalize_solutions(DLXMatrix::Vect2D sols) {
@@ -638,19 +643,19 @@ bool DLXMatrix::search_iter() {
       if (choice->size == 0) {
         search_down_ = false;
       } else {
-        hide(choice);
-        cover(choice->node.down);
+        cover(choice);
+        choose(choice->node.down);
       }
     } else {  // going up the recursion
       Node *row = work_.back();
       Header *choice = row->head;
-      uncover(row);
+      unchoose(row);
       row = row->down;
       if (row != &choice->node) {
-        cover(row);
+        choose(row);
         search_down_ = true;
       } else {
-        unhide(choice);
+        uncover(choice);
       }
     }
   }
@@ -711,8 +716,8 @@ void DLXMatrix::reset() {
   nb_choices = nb_dances = 0;
   while (!work_.empty()) {
     Node *row = work_.back();
-    uncover(row);
-    unhide(row->head);
+    unchoose(row);
+    uncover(row->head);
   }
   search_down_ = true;
 }
