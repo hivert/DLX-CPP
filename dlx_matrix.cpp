@@ -571,7 +571,7 @@ Vect2D DLXMatrix::search_rec(size_t max_sol) {
   return res;
 }
 void DLXMatrix::search_rec_internal(size_t max_sol, Vect2D &res) {
-  if (size_t(std::distance(master(), master()->right)) - 1 >= nb_primary_) {
+  if (!is_primary(master()->right)) {
     res.push_back(get_solution());
     return;
   }
@@ -630,7 +630,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method search_rec") {
 bool DLXMatrix::search_iter() {
   while (search_down_ || !work_.empty()) {
     if (search_down_) {  // going down the recursion
-      if (size_t(std::distance(master(), master()->right)) - 1 >= nb_primary_) {
+      if (!is_primary(master()->right)) {
         search_down_ = false;
         return true;
       }
