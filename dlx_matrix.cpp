@@ -515,7 +515,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method is_solution") {
   }
 }
 
-void DLXMatrix::hide(int row) {
+inline void DLXMatrix::hide(int row) {
   for (int nr = next_in_row(row); nr != row; nr = next_in_row(nr)) {
     rows_[rows_[nr].up].down = rows_[nr].down;
     rows_[rows_[nr].down].up = rows_[nr].up;
@@ -523,14 +523,14 @@ void DLXMatrix::hide(int row) {
     nb_dances++;
   }
 }
-void DLXMatrix::cover(int col) {
+inline void DLXMatrix::cover(int col) {
   heads_[heads_[col].left].right = heads_[col].right;
   heads_[heads_[col].right].left = heads_[col].left;
   for (int row = rows_[col].down; row != col; row = rows_[row].down) {
     hide(row);
   }
 }
-void DLXMatrix::choose(int nd) {
+inline void DLXMatrix::choose(int nd) {
   nb_choices++;
   work_.push_back(nd);
   for (int nr = next_in_row(nd); nr != nd; nr = next_in_row(nr))
@@ -538,7 +538,7 @@ void DLXMatrix::choose(int nd) {
 }
 
 
-void DLXMatrix::unhide(int row) {
+inline void DLXMatrix::unhide(int row) {
   for (int nr = prev_in_row(row); nr != row; nr = prev_in_row(nr)) {
     rows_[rows_[nr].top].size()++;
     rows_[rows_[nr].up].down = nr;
@@ -546,14 +546,14 @@ void DLXMatrix::unhide(int row) {
   }
 }
 
-void DLXMatrix::uncover(int col) {
+inline void DLXMatrix::uncover(int col) {
   heads_[heads_[col].left].right = col;
   heads_[heads_[col].right].left = col;
   for (int row = rows_[col].down; row != col; row = rows_[row].down)
     unhide(row);
 }
 
-void DLXMatrix::unchoose(int nd) {
+inline void DLXMatrix::unchoose(int nd) {
   for (int nr = prev_in_row(nd); nr != nd; nr = prev_in_row(nr))
     uncover(rows_[nr].top);
   work_.pop_back();
@@ -563,9 +563,9 @@ int DLXMatrix::choose_min() {
   int choice = heads_[0].right;
   ind_t min_size = rows_[choice].size();
   for (int h = heads_[choice].right; is_primary(h); h = heads_[h].right) {
-    if (rows_[choice].size() < min_size) {
+    if (rows_[h].size() < min_size) {
       choice = h;
-      min_size = rows_[choice].size();
+      min_size = rows_[h].size();
     }
   }
   return choice;
