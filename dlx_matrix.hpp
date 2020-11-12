@@ -107,20 +107,17 @@ class DLXMatrix {
   ind_t get_col_id(int h) const {
     return (h > 0) ? h - 1 : std::numeric_limits<ind_t>::max();
   }
-  bool is_primary(int h) const { return get_col_id(h) < nb_primary_; }
+  bool is_primary(int h) const { return h != 0 && h <= nb_primary_; }
 
   int next_in_row(int nd) {
-    if (rows_[nd].top <= 0) return -1;
     ++nd;
     return rows_[nd].top <= 0 ? rows_[nd].up : nd;
   }
   int prev_in_row(int nd) {
-    if (rows_[nd].top <= 0) return -1;
     --nd;
     return rows_[nd].top <= 0 ? rows_[nd].down : nd;
   }
   int row_id(int nd) {
-    if (rows_[nd].top <= 0) return -1;
     while (rows_[nd].top > 0) nd--;
     return -rows_[nd].top;
   }
