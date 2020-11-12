@@ -123,6 +123,14 @@ class DLXMatrix {
   void print_solution(const std::vector<Node *> &) const;
 };
 
+// Concept check
+static_assert(std::is_move_constructible<DLXMatrix>::value,
+              "DLXMatrix should be move constructible");
+static_assert(std::is_move_assignable<DLXMatrix>::value,
+              "DLXMatrix should bt move assignable");
+
+///////////////////////////////////////////////////////////
+// Errors and input validation
 struct size_mismatch_error : public std::runtime_error {
   size_mismatch_error(const std::string &s, DLXMatrix::ind_t expected,
                       DLXMatrix::ind_t sz)
@@ -137,13 +145,10 @@ struct empty_error : public std::runtime_error {
       : std::runtime_error("Empty " + s + " are not allowed") {}
 };
 
+///////////////////////////////////////////////////////////
+// Various related functions
 std::vector<DLXMatrix::ind_t> inverse_perm(
     const std::vector<DLXMatrix::ind_t> &perm);
-
-static_assert(std::is_move_constructible<DLXMatrix>::value,
-              "DLXMatrix should be move constructible");
-static_assert(std::is_move_assignable<DLXMatrix>::value,
-              "DLXMatrix should bt move assignable");
 
 inline std::ostream &operator<<(std::ostream &out,
                                 const DLX_backtrack::DLXMatrix &M) {
