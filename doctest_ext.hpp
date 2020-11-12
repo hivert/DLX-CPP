@@ -15,8 +15,8 @@
 #ifndef DOCTEST_EXT_HPP_
 #define DOCTEST_EXT_HPP_
 
-#include <cstdlib>  // exit
 #include <doctest/doctest.h>
+#include <cstdlib>  // exit
 #include <ostream>
 #include <sstream>  // ostringstream
 #include <vector>

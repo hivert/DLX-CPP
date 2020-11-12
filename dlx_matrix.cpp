@@ -19,14 +19,14 @@
 
 #include "doctest_ext.hpp"
 
-#include <algorithm>   // sort, transform, shuffle
-#include <iostream>    // cout, cin, ...
-#include <limits>      // numeric_limits
-#include <numeric>     // iota
-#include <random>      // default_random_engine
-#include <sstream>     // ostringstream
-#include <stdexcept>   // out_of_range
-#include <vector>      // vector
+#include <algorithm>  // sort, transform, shuffle
+#include <iostream>   // cout, cin, ...
+#include <limits>     // numeric_limits
+#include <numeric>    // iota
+#include <random>     // default_random_engine
+#include <sstream>    // ostringstream
+#include <stdexcept>  // out_of_range
+#include <vector>     // vector
 
 namespace DLX_backtrack {
 

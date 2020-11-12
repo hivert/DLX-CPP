@@ -21,7 +21,8 @@
 
 namespace hash_tuple {
 
-template <typename TT> struct hash;
+template <typename TT>
+struct hash;
 
 // Code from boost
 // Reciprocal of the golden ratio helps spread entropy
@@ -48,12 +49,9 @@ struct HashValueImpl<Tuple, 0> {
   }
 };
 
-
 template <typename TT>
 struct hash {
-  size_t operator()(TT const& tt) const {
-        return std::hash<TT>()(tt);
-    }
+  size_t operator()(TT const &tt) const { return std::hash<TT>()(tt); }
 };
 
 template <typename... TT>

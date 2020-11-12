@@ -19,7 +19,7 @@
 #define DLX_MATRIX_HPP_
 
 #include <iostream>
-#include <limits>      // numeric_limits
+#include <limits>  // numeric_limits
 #include <vector>
 
 namespace DLX_backtrack {
