@@ -18,11 +18,24 @@
 #ifndef DLX_MATRIX_HPP_
 #define DLX_MATRIX_HPP_
 
-#include <iostream>
-#include <limits>  // numeric_limits
+#include <algorithm>  // transform
+#include <functional> // bind
+#include <iostream>   // cout
+#include <limits>     // numeric_limits
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace DLX_backtrack {
+
+template<typename A, typename Fun>
+std::vector<std::invoke_result_t<Fun, A>>
+vector_transform(const std::vector<A> &v, Fun fun) {
+  std::vector<std::invoke_result_t<Fun, A>> res;
+  res.reserve(v.size());
+  std::transform(v.cbegin(), v.cend(), std::back_inserter(res), fun);
+  return res;
+}
 
 /////////////////
 class DLXMatrix {
@@ -129,6 +142,74 @@ static_assert(std::is_move_constructible<DLXMatrix>::value,
 static_assert(std::is_move_assignable<DLXMatrix>::value,
               "DLXMatrix should bt move assignable");
 
+
+/////////////////
+template <typename Item, typename OptId, typename ItemHash = std::hash<Item>>
+class DLXMatrixIdent : private DLXMatrix {
+  std::vector<Item> items_;
+  std::vector<OptId> optids_;
+  std::unordered_map<Item, int, ItemHash> item_ind_;
+
+ public:
+  using DLXMatrix::Vect1D, DLXMatrix::Vect2D;
+  using ind_t = DLXMatrix::ind_t;
+  using Option = std::vector<Item>;
+
+  DLXMatrixIdent() : DLXMatrixIdent({}) {}
+  explicit DLXMatrixIdent(std::vector<Item> items) :
+      DLXMatrixIdent(items, items.size()) {}
+  DLXMatrixIdent(std::vector<Item> items, ind_t nb_primary) :
+      DLXMatrix(items.size(), nb_primary),
+      items_(items), optids_(), item_ind_() {
+    for (size_t i=0; i < items_.size(); i++)
+      item_ind_.insert(std::make_pair(items[i], i));
+  }
+  DLXMatrixIdent(std::vector<Item> items,
+                 const std::vector<std::pair<OptId, Option>> &opts)
+      : DLXMatrixIdent(items, items.size(), opts) {}
+  DLXMatrixIdent(std::vector<Item> items, ind_t nb_primary,
+                 const std::vector<std::pair<OptId, Option>> &opts)
+      : DLXMatrixIdent(items, nb_primary) {
+    for (auto &[id, row] : opts) add_opt(id, row);
+  }
+  DLXMatrixIdent(const DLXMatrixIdent &) = default;
+  DLXMatrixIdent &operator=(const DLXMatrixIdent &other) = default;
+  DLXMatrixIdent(DLXMatrixIdent &&) = default;
+  DLXMatrixIdent &operator=(DLXMatrixIdent &&other) = default;
+  ~DLXMatrixIdent() = default;
+
+  using DLXMatrix::nb_choices, DLXMatrix::nb_dances;
+  size_t nb_items() const { return nb_cols(); }
+  size_t nb_opts() const { return nb_rows(); }
+  using DLXMatrix::nb_primary;
+  using DLXMatrix::check_sizes;
+
+  using DLXMatrix::reset;
+  using DLXMatrix::to_string;
+
+  ind_t add_opt(const OptId &optid, const Option &opt) {
+    optids_.push_back(optid);
+    return DLXMatrix::add_row_sparse(
+        vector_transform(
+            opt, [this](const Item &n) -> ind_t { return item_ind_[n]; }));
+  }
+  using DLXMatrix::add_row_sparse, DLXMatrix::add_row_dense;
+  using DLXMatrix::row_sparse, DLXMatrix::row_dense;
+  Option opt(ind_t i) const {
+    return vector_transform(row_sparse(i),
+                            [this](ind_t n) { return items_[n]; });
+  };
+
+  bool search_iter() { return DLXMatrix::search_iter(); }
+  std::vector<OptId> get_solution() {
+    return vector_transform(DLXMatrix::get_solution(),
+                            [this](ind_t n) { return optids_[n]; });
+  }
+
+};
+
+using DLXMatrixNamed = DLXMatrixIdent<std::string, std::string>;
+
 ///////////////////////////////////////////////////////////
 // Errors and input validation
 struct size_mismatch_error : public std::runtime_error {
@@ -152,6 +233,14 @@ std::vector<DLXMatrix::ind_t> inverse_perm(
 
 inline std::ostream &operator<<(std::ostream &out,
                                 const DLX_backtrack::DLXMatrix &M) {
+  return out << M.to_string();
+}
+
+template <typename Item,
+          typename OptId,
+          typename ItemHash>
+inline std::ostream &operator<<(std::ostream &out,
+                                const DLX_backtrack::DLXMatrixIdent<Item, OptId, ItemHash> &M) {
   return out << M.to_string();
 }
 

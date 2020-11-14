@@ -31,28 +31,21 @@
 
 namespace cron = std::chrono;
 
-using col_type = std::tuple<char, int, int>;
+using item_t = std::tuple<char, int, int>;
+using opt_t = std::tuple<int, int, int>;
 using SQMatrix = std::vector<std::vector<int>>;
 using ind_t = DLX_backtrack::DLXMatrix::ind_t;
 
-SQMatrix blocks, matrix;
 
 int row_size, col_size, sq_size, nb_hint;
-std::vector<col_type> col_names;
-std::vector<std::tuple<int, int, int>> row_codes;
-std::unordered_map<col_type, int, hash_tuple::hash<col_type>> col_indices;
+SQMatrix blocks, matrix;
 
-void new_col(col_type name) {
-  col_indices.insert(std::make_pair(name, col_names.size()));
-  col_names.push_back(name);
-}
-
-std::vector<ind_t> row_case_occ(int row, int col, int nb, SQMatrix &blocks) {
-  std::vector<ind_t> res;
-  res.push_back(col_indices[{'r', row, nb}]);
-  res.push_back(col_indices[{'c', col, nb}]);
-  res.push_back(col_indices[{'s', row, col}]);
-  res.push_back(col_indices[{'b', blocks[row - 1][col - 1], nb}]);
+std::vector<item_t> set_box_option(int row, int col, int nb) {
+  std::vector<item_t> res;
+  res.push_back({'r', row, nb});
+  res.push_back({'c', col, nb});
+  res.push_back({'s', row, col});
+  res.push_back({'b', blocks[row - 1][col - 1], nb});
   return res;
 }
 
@@ -150,24 +143,25 @@ int main(int argc, char *argv[]) {
   }
 
   auto tencode = std::chrono::high_resolution_clock::now();
+  std::vector<item_t> items;
   for (int i = 1; i <= sq_size; i++)  // Square i,j occupied
-    for (int j = 1; j <= sq_size; j++) new_col({'s', i, j});
+    for (int j = 1; j <= sq_size; j++) items.push_back({'s', i, j});
   for (int i = 1; i <= sq_size; i++)  // Block i occupied by j
-    for (int j = 1; j <= sq_size; j++) new_col({'b', i, j});
+    for (int j = 1; j <= sq_size; j++) items.push_back({'b', i, j});
   for (int i = 1; i <= sq_size; i++)  // Row i occupied by j
-    for (int j = 1; j <= sq_size; j++) new_col({'r', i, j});
+    for (int j = 1; j <= sq_size; j++) items.push_back({'r', i, j});
   for (int i = 1; i <= sq_size; i++)  // Col i occupied by j
-    for (int j = 1; j <= sq_size; j++) new_col({'c', i, j});
-  for (int i = 0; i < nb_hint; i++) new_col({'e', i, 0});
+    for (int j = 1; j <= sq_size; j++) items.push_back({'c', i, j});
+  for (int i = 0; i < nb_hint; i++) items.push_back({'e', i, 0});
 
-  DLX_backtrack::DLXMatrix M(col_names.size());
+  DLX_backtrack::DLXMatrixIdent<item_t, opt_t, hash_tuple::hash<item_t>>
+      M(items);
 
   // Rules of the Sudoku game
   for (int r = 1; r <= sq_size; r++) {
     for (int c = 1; c <= sq_size; c++) {
       for (int n = 1; n <= sq_size; n++) {
-        M.add_row(row_case_occ(r, c, n, blocks));
-        row_codes.emplace_back(r, c, n);
+        M.add_opt({r, c, n}, set_box_option(r, c, n));
       }
     }
   }
@@ -175,10 +169,9 @@ int main(int argc, char *argv[]) {
   for (int r = 1; r <= sq_size; r++) {
     for (int c = 1; c <= sq_size; c++) {
       if (matrix[r - 1][c - 1] != 0) {
-        auto row = row_case_occ(r, c, matrix[r - 1][c - 1], blocks);
-        row.push_back(col_indices[{'e', nb_hint, 0}]);
-        M.add_row(row);
-        row_codes.emplace_back(r, c, matrix[r - 1][c - 1]);
+        auto row = set_box_option(r, c, matrix[r - 1][c - 1]);
+        row.push_back({'e', nb_hint, 0});
+        M.add_opt({r, c, matrix[r - 1][c - 1]}, row);
         nb_hint++;
       }
     }
@@ -186,20 +179,18 @@ int main(int argc, char *argv[]) {
 
   auto tcompute = std::chrono::high_resolution_clock::now();
 
-  std::vector<ind_t> soldance;
-  if (!M.search_iter(soldance)) {
+  if (!M.search_iter()) {
     std::cout << "No solution found !" << std::endl;
     exit(EXIT_FAILURE);
   }
+  auto soldance = M.get_solution();
   if (M.search_iter()) {
     std::cout << "More than one solution found !" << std::endl;
     exit(EXIT_FAILURE);
   }
   SQMatrix solution(sq_size, std::vector<int>(sq_size));
-  for (int rind : soldance) {
-    auto [r, c, n] = row_codes[rind];
+  for (auto [r, c, n] : soldance)
     solution[r - 1][c - 1] = n;
-  }
 
   auto endcompute = cron::high_resolution_clock::now();
   std::cout << std::endl;
