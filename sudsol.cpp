@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < nb_hint; i++) items.push_back({'e', i, 0});
 
   DLX_backtrack::DLXMatrixIdent<item_t, opt_t, hash_tuple::hash<item_t>>
-      M(items);
+      M(std::move(items));  // items is no more needed
 
   // Rules of the Sudoku game
   for (int r = 1; r <= sq_size; r++) {

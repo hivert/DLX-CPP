@@ -75,8 +75,8 @@ class DLXMatrix {
   DLXMatrix(ind_t nb_col, ind_t nb_primary, const Vect2D &rows);
   DLXMatrix(const DLXMatrix &);
   DLXMatrix &operator=(const DLXMatrix &other);
-  DLXMatrix(DLXMatrix &&) = default;
-  DLXMatrix &operator=(DLXMatrix &&other) = default;
+  DLXMatrix(DLXMatrix &&) noexcept = default;
+  DLXMatrix &operator=(DLXMatrix &&other) noexcept = default;
   ~DLXMatrix() = default;
 
   size_t nb_cols() const { return heads_.size() - 1; }
@@ -154,23 +154,31 @@ class DLXMatrixIdent : private DLXMatrix {
   using DLXMatrix::Vect1D, DLXMatrix::Vect2D;
   using ind_t = DLXMatrix::ind_t;
   using Option = std::vector<Item>;
+  using OptPair = std::pair<OptId, Option>;
+  using OptPairs = std::vector<std::pair<OptId, Option>>;
 
-  DLXMatrixIdent() : DLXMatrixIdent({}) {}
-  explicit DLXMatrixIdent(std::vector<Item> items) :
-      DLXMatrixIdent(items, items.size()) {}
-  DLXMatrixIdent(std::vector<Item> items, ind_t nb_primary) :
+  DLXMatrixIdent() : DLXMatrixIdent({}, 0) {}
+  explicit DLXMatrixIdent(const Option &items) :
+      DLXMatrixIdent(Option(items), items.size()) {}
+  explicit DLXMatrixIdent(Option &&items) :
+      DLXMatrixIdent(std::move(items), items.size()) {}
+  DLXMatrixIdent(const Option &items, ind_t nb_primary) :
+      DLXMatrixIdent(Option(items), nb_primary) {}
+  DLXMatrixIdent(Option &&items, ind_t nb_primary) :
       DLXMatrix(items.size(), nb_primary),
-      items_(items), optids_(), item_ind_() {
+      items_(std::move(items)), optids_(), item_ind_() {
     for (size_t i=0; i < items_.size(); i++)
-      item_ind_.insert(std::make_pair(items[i], i));
+      item_ind_.insert(std::make_pair(items_[i], i));
   }
-  DLXMatrixIdent(std::vector<Item> items,
-                 const std::vector<std::pair<OptId, Option>> &opts)
-      : DLXMatrixIdent(items, items.size(), opts) {}
-  DLXMatrixIdent(std::vector<Item> items, ind_t nb_primary,
-                 const std::vector<std::pair<OptId, Option>> &opts)
-      : DLXMatrixIdent(items, nb_primary) {
-    for (auto &[id, row] : opts) add_opt(id, row);
+  DLXMatrixIdent(const Option &items, const OptPairs &opts)
+      : DLXMatrixIdent(Option(items), items.size(), opts) {}
+  DLXMatrixIdent(Option &&items, const OptPairs &opts)
+      : DLXMatrixIdent(std::move(items), items.size(), opts) {}
+  DLXMatrixIdent(const Option &items, ind_t nb_primary, const OptPairs &opts)
+      : DLXMatrixIdent(Option(items), items.size(), opts) {}
+  DLXMatrixIdent(Option &&items, ind_t nb_primary, const OptPairs &opts)
+      : DLXMatrixIdent(std::move(items), nb_primary) {
+    for (const auto &[id, row] : opts) add_opt(id, row);
   }
   DLXMatrixIdent(const DLXMatrixIdent &) = default;
   DLXMatrixIdent &operator=(const DLXMatrixIdent &other) = default;
