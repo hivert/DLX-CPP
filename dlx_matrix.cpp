@@ -244,7 +244,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "DLXMatrix copy constructor") {
     CHECK(N.nb_cols() == M.nb_cols());
     REQUIRE(N.nb_rows() == M.nb_rows());
     for (ind_t i = 0; i < M.nb_rows(); i++)
-      CHECK(N.row_sparse(i) == M.row_sparse(i));
+      CHECK(N.ith_row_sparse(i) == M.ith_row_sparse(i));
     // Check that modifying the copy doesn't change the original
     if (N.nb_cols() != 0) {
       N.add_row_sparse({0});
@@ -283,7 +283,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "DLXMatrix::operator=") {
     CHECK(N.nb_cols() == M.nb_cols());
     REQUIRE(N.nb_rows() == M.nb_rows());
     for (ind_t i = 0; i < M.nb_rows(); i++)
-      CHECK(N.row_sparse(i) == M.row_sparse(i));
+      CHECK(N.ith_row_sparse(i) == M.ith_row_sparse(i));
   }
 }
 
@@ -294,25 +294,25 @@ Vect1D DLXMatrix::row_sparse(const std::vector<Node> &row) const {
                  [this](const Node &n) -> ind_t { return get_col_id(n.head); });
   return r;
 }
-Vect1D DLXMatrix::row_sparse(ind_t i) const { return row_sparse(rows_.at(i)); }
-TEST_CASE("Method row_sparse") {
+Vect1D DLXMatrix::ith_row_sparse(ind_t i) const { return row_sparse(rows_.at(i)); }
+TEST_CASE("Method ith_row_sparse") {
   DLXMatrix M(5, {{0, 1}, {2, 3, 4}, {1, 2, 4}});
-  CHECK(M.row_sparse(0) == Vect1D({0, 1}));
-  CHECK(M.row_sparse(1) == Vect1D({2, 3, 4}));
-  CHECK(M.row_sparse(2) == Vect1D({1, 2, 4}));
+  CHECK(M.ith_row_sparse(0) == Vect1D({0, 1}));
+  CHECK(M.ith_row_sparse(1) == Vect1D({2, 3, 4}));
+  CHECK(M.ith_row_sparse(2) == Vect1D({1, 2, 4}));
 }
 
 std::vector<bool> DLXMatrix::row_dense(const std::vector<Node> &row) const {
   return row_to_dense(DLXMatrix::row_sparse(row));
 }
-std::vector<bool> DLXMatrix::row_dense(ind_t i) const {
+std::vector<bool> DLXMatrix::ith_row_dense(ind_t i) const {
   return row_dense(rows_.at(i));
 }
-TEST_CASE("Method row_dense") {
+TEST_CASE("Method ith_row_dense") {
   DLXMatrix M(5, {{0, 1}, {2, 3, 4}, {1, 2, 4}});
-  CHECK(M.row_dense(0) == std::vector<bool>({1, 1, 0, 0, 0}));
-  CHECK(M.row_dense(1) == std::vector<bool>({0, 0, 1, 1, 1}));
-  CHECK(M.row_dense(2) == std::vector<bool>({0, 1, 1, 0, 1}));
+  CHECK(M.ith_row_dense(0) == std::vector<bool>({1, 1, 0, 0, 0}));
+  CHECK(M.ith_row_dense(1) == std::vector<bool>({0, 0, 1, 1, 1}));
+  CHECK(M.ith_row_dense(2) == std::vector<bool>({0, 1, 1, 0, 1}));
 }
 
 void DLXMatrix::check_sizes() const {
@@ -365,8 +365,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_sparse") {
         CHECK(M.nb_cols() == MSave.nb_cols());
         REQUIRE(M.nb_rows() == MSave.nb_rows() + 1);
         for (ind_t i = 0; i < MSave.nb_rows(); i++)
-          CHECK(M.row_sparse(i) == MSave.row_sparse(i));
-        CHECK(M.row_sparse(MSave.nb_rows()) == Vect1D({2, 3}));
+          CHECK(M.ith_row_sparse(i) == MSave.ith_row_sparse(i));
+        CHECK(M.ith_row_sparse(MSave.nb_rows()) == Vect1D({2, 3}));
         CHECK_NOTHROW(M.check_sizes());
       }
     }
@@ -380,7 +380,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_sparse") {
         CHECK(M.nb_cols() == MSave.nb_cols());
         REQUIRE(M.nb_rows() == MSave.nb_rows());
         for (ind_t i = 0; i < MSave.nb_rows(); i++)
-          CHECK(M.row_sparse(i) == MSave.row_sparse(i));
+          CHECK(M.ith_row_sparse(i) == MSave.ith_row_sparse(i));
         CHECK_NOTHROW(M.check_sizes());
       }
     }
@@ -392,13 +392,13 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_sparse") {
     CHECK(M5_3.nb_cols() == MSave.nb_cols());
     REQUIRE(M5_3.nb_rows() == MSave.nb_rows());
     for (ind_t i = 0; i < MSave.nb_rows(); i++)
-      CHECK(M5_3.row_sparse(i) == MSave.row_sparse(i));
+      CHECK(M5_3.ith_row_sparse(i) == MSave.ith_row_sparse(i));
     CHECK_NOTHROW(M5_3.check_sizes());
   }
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row") {
   CHECK(M5_3.add_row({2, 3}) == 3);
-  CHECK(M5_3.row_sparse(3) == Vect1D({2, 3}));
+  CHECK(M5_3.ith_row_sparse(3) == Vect1D({2, 3}));
   CHECK_THROWS_WITH_AS(M5_3.add_row({}), "Empty rows are not allowed",
                        empty_error);
 }
@@ -447,7 +447,7 @@ ind_t DLXMatrix::add_row_dense(const std::vector<bool> &r) {
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_dense") {
   CHECK(M5_3.add_row_dense({0, 0, 1, 1, 0}) == 3);
-  CHECK(M5_3.row_sparse(3) == Vect1D({2, 3}));
+  CHECK(M5_3.ith_row_sparse(3) == Vect1D({2, 3}));
   CHECK_THROWS_WITH_AS(M5_3.add_row_dense({0, 1, 1, 0}),
                        "Wrong row size: 4 (expecting 5)", size_mismatch_error);
   CHECK_THROWS_WITH_AS(M5_3.add_row_dense({0, 1, 1, 0, 1, 0}),
@@ -457,7 +457,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_dense") {
 bool DLXMatrix::is_solution(const Vect1D &sol) {
   Vect1D cols(nb_cols());
   for (ind_t r : sol) {
-    std::transform(cols.begin(), cols.end(), row_dense(r).begin(), cols.begin(),
+    std::transform(cols.begin(), cols.end(), ith_row_dense(r).begin(), cols.begin(),
                    std::plus<>());
   }
   for (ind_t i = 0; i < nb_primary_; i++)
@@ -765,7 +765,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method permuted_inv_columns") {
           normalize_solutions(M6_10.search_rec()));
     for (ind_t r = 0; r < M6_10.nb_rows(); r++) {
       for (ind_t c = 0; c < M6_10.nb_cols(); c++) {
-        CHECK(M.row_dense(r)[perm[c]] == M6_10.row_dense(r)[c]);
+        CHECK(M.ith_row_dense(r)[perm[c]] == M6_10.ith_row_dense(r)[c]);
       }
     }
   }
@@ -793,7 +793,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method permuted_columns") {
           normalize_solutions(M6_10.search_rec()));
     for (ind_t r = 0; r < M6_10.nb_rows(); r++) {
       for (ind_t c = 0; c < M6_10.nb_cols(); c++) {
-        CHECK(M.row_dense(r)[c] == M6_10.row_dense(r)[perm[c]]);
+        CHECK(M.ith_row_dense(r)[c] == M6_10.ith_row_dense(r)[perm[c]]);
       }
     }
   }
@@ -821,7 +821,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method permuted_rows") {
     CHECK(M.nb_rows() == M6_10.nb_rows());
     for (ind_t i = 0; i < 10; i++) {
       CAPTURE(i);
-      CHECK(M.row_sparse(i) == M6_10.row_sparse(perm[i]));
+      CHECK(M.ith_row_sparse(i) == M6_10.ith_row_sparse(perm[i]));
     }
   }
 }

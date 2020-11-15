@@ -88,8 +88,8 @@ class DLXMatrix {
   ind_t add_row(const Vect1D &r) { return add_row_sparse(r); }
   ind_t add_row_sparse(const Vect1D &r);
   ind_t add_row_dense(const std::vector<bool> &r);
-  Vect1D row_sparse(ind_t i) const;
-  std::vector<bool> row_dense(ind_t i) const;
+  Vect1D ith_row_sparse(ind_t i) const;
+  std::vector<bool> ith_row_dense(ind_t i) const;
 
   Vect1D row_to_sparse(const std::vector<bool> &row) const;
   std::vector<bool> row_to_dense(Vect1D row) const;
@@ -194,9 +194,9 @@ class DLXMatrixIdent : private DLXMatrix {
             opt, [this](const Item &n) -> ind_t { return item_ind_[n]; }));
   }
   using DLXMatrix::add_row_sparse, DLXMatrix::add_row_dense;
-  using DLXMatrix::row_sparse, DLXMatrix::row_dense;
+  using DLXMatrix::ith_row_sparse, DLXMatrix::ith_row_dense;
   Option opt(ind_t i) const {
-    return vector_transform(row_sparse(i),
+    return vector_transform(ith_row_sparse(i),
                             [this](ind_t n) { return items_[n]; });
   };
 

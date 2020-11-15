@@ -37,7 +37,7 @@ std::string sol_to_string(size_t N, DLX_backtrack::DLXMatrix &M,
                           DLX_backtrack::DLXMatrix::Vect1D sol) {
   std::string res(2 * N, '_');
   for (size_t irow : sol) {
-    auto row = M.row_sparse(irow);
+    auto row = M.ith_row_sparse(irow);
     size_t l = row[0] + 1;
     size_t pos1 = row[1] - N;
     res[pos1] = hex(l);

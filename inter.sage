@@ -17,7 +17,7 @@ sage: M.add_row(V([1,2]))
 1
 sage: M.add_row(V([1,3]))
 2
-sage: matrix([[int(x) for x in M.row_dense(int(i))] for i in range(M.nb_rows())])
+sage: matrix([[int(x) for x in M.ith_row_dense(int(i))] for i in range(M.nb_rows())])
 [1 0 1 0]
 [0 1 1 0]
 [0 1 0 1]
