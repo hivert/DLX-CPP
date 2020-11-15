@@ -191,11 +191,11 @@ class DLXMatrixIdent : private DLXMatrix {
     optids_.push_back(optid);
     return DLXMatrix::add_row_sparse(
         vector_transform(
-            opt, [this](const Item &n) -> ind_t { return item_ind_[n]; }));
+            opt, [this](const Item &n) -> ind_t { return item_ind_.at(n); }));
   }
   using DLXMatrix::add_row_sparse, DLXMatrix::add_row_dense;
   using DLXMatrix::ith_row_sparse, DLXMatrix::ith_row_dense;
-  Option opt(ind_t i) const {
+  Option ith_opt(ind_t i) const {
     return vector_transform(ith_row_sparse(i),
                             [this](ind_t n) { return items_[n]; });
   };

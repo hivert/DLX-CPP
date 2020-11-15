@@ -873,10 +873,11 @@ TEST_CASE("Constructor") {
                       {"rowCD", {"C", "D"}} });
   CHECK(M1.nb_items() == 4);
   CHECK(M1.nb_opts() == 3);
-  CHECK(M1.opt(1) == DLXMatrixNamed::Option({"A", "C"}));
+  CHECK(M1.ith_opt(1) == DLXMatrixNamed::Option({"A", "C"}));
   CHECK(M1.search_iter());
   CHECK(M1.get_solution() == std::vector<std::string>({"rowAB", "rowCD"}));
   CHECK_FALSE(M1.search_iter());
+  CHECK_THROWS_AS(M1.add_opt("AE", {"A", "E"}), std::out_of_range);
 }
 
 /////////////////////////////////////////////////////////
