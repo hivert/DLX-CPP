@@ -36,7 +36,6 @@ using opt_t = std::tuple<int, int, int>;
 using SQMatrix = std::vector<std::vector<int>>;
 using ind_t = DLX_backtrack::DLXMatrix::ind_t;
 
-
 int row_size, col_size, sq_size, nb_hint;
 SQMatrix blocks, matrix;
 
@@ -152,10 +151,9 @@ int main(int argc, char *argv[]) {
     for (int j = 1; j <= sq_size; j++) items.push_back({'r', i, j});
   for (int i = 1; i <= sq_size; i++)  // Col i occupied by j
     for (int j = 1; j <= sq_size; j++) items.push_back({'c', i, j});
-  for (int i = 0; i < nb_hint; i++) items.push_back({'e', i, 0});
 
-  DLX_backtrack::DLXMatrixIdent<item_t, opt_t, hash_tuple::hash<item_t>>
-      M(std::move(items));  // items is no more needed
+  DLX_backtrack::DLXMatrixIdent<item_t, opt_t, hash_tuple::hash<item_t>> M(
+      std::move(items));  // items is no more needed
 
   // Rules of the Sudoku game
   for (int r = 1; r <= sq_size; r++) {
@@ -165,14 +163,10 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  nb_hint = 0;
   for (int r = 1; r <= sq_size; r++) {
     for (int c = 1; c <= sq_size; c++) {
       if (matrix[r - 1][c - 1] != 0) {
-        auto row = set_box_option(r, c, matrix[r - 1][c - 1]);
-        row.push_back({'e', nb_hint, 0});
-        M.add_opt({r, c, matrix[r - 1][c - 1]}, row);
-        nb_hint++;
+        M.choose({r, c, matrix[r - 1][c - 1]});
       }
     }
   }
@@ -189,8 +183,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
   SQMatrix solution(sq_size, std::vector<int>(sq_size));
-  for (auto [r, c, n] : soldance)
-    solution[r - 1][c - 1] = n;
+  for (auto [r, c, n] : soldance) solution[r - 1][c - 1] = n;
 
   auto endcompute = cron::high_resolution_clock::now();
   std::cout << std::endl;

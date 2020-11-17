@@ -99,7 +99,6 @@ class DLXMatrixFixture {
 //  8 [0 0 1 0 0 0 1 0 0 0]
 //  9 [0 0 0 1 0 0 0 1 0 1]
 // 10 [0 1 0 0 0 1 0 0 1 0]
-// 11 [0 0 0 0 0 0 0 0 0 1]  // Secondary column not coded
         VA2AB{{0, 4}, {0, 5}, {0, 6}, {1, 4}, {1, 5}, {1, 6},
               {2, 4, 9}, {2, 5}, {2, 6}, {3, 7, 9}, {1, 5, 8}},
 
@@ -153,6 +152,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "DLXMatrix::operator<<") {
 
 DLXMatrix::DLXMatrix(ind_t nb_col, ind_t nb_primary)
     : nb_primary_(std::min(nb_col, nb_primary)),
+      depth_(0),
       heads_(nb_col + 1),
       search_down_(true),
       nb_choices(0),
@@ -228,7 +228,7 @@ DLXMatrix::DLXMatrix(const DLXMatrix &other)
     : DLXMatrix(other.nb_cols(), other.nb_primary_) {
   for (const auto &row : other.rows_) add_row_sparse(other.row_sparse(row));
   for (const Node *nother : other.work_) {
-    ind_t id = nother->row_id;
+    ind_t id = other.get_row_id(nother);
     Node *node = &rows_[id][std::distance(other.rows_[id].data(), nother)];
     cover(node->head);
     choose(node);
@@ -294,7 +294,9 @@ Vect1D DLXMatrix::row_sparse(const std::vector<Node> &row) const {
                  [this](const Node &n) -> ind_t { return get_col_id(n.head); });
   return r;
 }
-Vect1D DLXMatrix::ith_row_sparse(ind_t i) const { return row_sparse(rows_.at(i)); }
+Vect1D DLXMatrix::ith_row_sparse(ind_t i) const {
+  return row_sparse(rows_.at(i));
+}
 TEST_CASE("Method ith_row_sparse") {
   DLXMatrix M(5, {{0, 1}, {2, 3, 4}, {1, 2, 4}});
   CHECK(M.ith_row_sparse(0) == Vect1D({0, 1}));
@@ -457,8 +459,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_dense") {
 bool DLXMatrix::is_solution(const Vect1D &sol) {
   Vect1D cols(nb_cols());
   for (ind_t r : sol) {
-    std::transform(cols.begin(), cols.end(), ith_row_dense(r).begin(), cols.begin(),
-                   std::plus<>());
+    std::transform(cols.begin(), cols.end(), ith_row_dense(r).begin(),
+                   cols.begin(), std::plus<>());
   }
   for (ind_t i = 0; i < nb_primary_; i++)
     if (cols[i] != 1) return false;
@@ -633,7 +635,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method search_rec") {
 // Iterative version
 ///////////////////////////////////////
 bool DLXMatrix::search_iter() {
-  while (search_down_ || !work_.empty()) {
+  while (search_down_ || work_.size() > depth_) {
     if (search_down_) {  // going down the recursion
       if (!is_primary(master()->right)) {
         search_down_ = false;
@@ -701,7 +703,7 @@ Vect1D DLXMatrix::get_solution() {
   Vect1D r;
   r.reserve(work_.size());
   std::transform(work_.begin(), work_.end(), std::back_inserter(r),
-                 [](Node *n) -> ind_t { return n->row_id; });
+                 [this](Node *n) -> ind_t { return get_row_id(n); });
   return r;
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method get_solution") {
@@ -712,14 +714,15 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method get_solution") {
   CHECK(M6_10.get_solution() == Vect1D({5, 0, 6, 4}));
 }
 
-void DLXMatrix::reset() {
+void DLXMatrix::reset(size_t depth) {
   nb_choices = nb_dances = 0;
-  while (!work_.empty()) {
+  while (work_.size() > depth) {
     Node *row = work_.back();
     unchoose(row);
     uncover(row->head);
   }
   search_down_ = true;
+  depth_ = work_.size();
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method reset") {
   DLXMatrix N(M6_10);
@@ -730,6 +733,30 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method reset") {
   while (M6_10.search_iter()) solM.push_back(M6_10.get_solution());
   while (N.search_iter()) solN.push_back(N.get_solution());
   CHECK(solN == solM);
+}
+
+ind_t DLXMatrix::choose(ind_t i) {
+  Node *nd = rows_.at(i).data();
+  cover(nd->head);
+  choose(nd);
+  return ++depth_;
+}
+TEST_CASE_FIXTURE(DLXMatrixFixture, "Method choose") {
+  CHECK(M6_10.choose(2) == 1);
+  Vect2D solM;
+  while (M6_10.search_iter()) solM.push_back(M6_10.get_solution());
+  CHECK(normalize_solutions(solM) == Vect2D({{0, 2, 3, 5}}));
+  M6_10.reset();
+  solM.clear();
+  CHECK(M6_10.choose(5) == 1);
+  CHECK(M6_10.choose(4) == 2);
+  while (M6_10.search_iter()) solM.push_back(M6_10.get_solution());
+  CHECK(normalize_solutions(solM) == Vect2D({{0, 4, 5, 6}, {4, 5, 7}}));
+  M6_10.reset(1);
+  solM.clear();
+  while (M6_10.search_iter()) solM.push_back(M6_10.get_solution());
+  CHECK(normalize_solutions(solM) ==
+        Vect2D({{0, 2, 3, 5}, {0, 4, 5, 6}, {1, 5, 8}, {4, 5, 7}}));
 }
 
 DLXMatrix DLXMatrix::permuted_inv_columns(const Vect1D &perm) {
@@ -867,17 +894,26 @@ TEST_SUITE_BEGIN("[dlx_matrix]class DLXMatrixNamed");
 TEST_CASE("Constructor") {
   DLXMatrixNamed M({"A", "B", "C"});
   CHECK(M.nb_items() == 3);
+  // clang-format off
   DLXMatrixNamed M1({"A", "B", "C", "D"},
                     { {"rowAB", {"A", "B"}},
                       {"rowAC", {"A", "C"}},
-                      {"rowCD", {"C", "D"}} });
+                     {"rowCD", {"C", "D"}} });
+  // clang-format on
   CHECK(M1.nb_items() == 4);
   CHECK(M1.nb_opts() == 3);
   CHECK(M1.ith_opt(1) == DLXMatrixNamed::Option({"A", "C"}));
   CHECK(M1.search_iter());
   CHECK(M1.get_solution() == std::vector<std::string>({"rowAB", "rowCD"}));
+  CHECK(M1.is_solution({"rowCD", "rowAB"}));
+  CHECK(M1.get_opt_ind("rowCD") == 2);
+  CHECK(M1.ith_opt(M1.get_opt_ind("rowCD")) ==
+        DLXMatrixNamed::Option({"C", "D"}));
+  CHECK_THROWS_AS(M1.get_opt_ind("rowXX"), std::runtime_error);
   CHECK_FALSE(M1.search_iter());
   CHECK_THROWS_AS(M1.add_opt("AE", {"A", "E"}), std::out_of_range);
+  CHECK_THROWS_WITH_AS(DLXMatrixNamed({"A", "B", "C", "B"}),
+                       "DLXMatrixIdent : Duplicate item", std::runtime_error);
 }
 
 /////////////////////////////////////////////////////////
