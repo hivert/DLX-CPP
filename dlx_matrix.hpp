@@ -103,13 +103,15 @@ class DLXMatrix {
   Vect1D get_solution();
   bool search_random(Vect1D &);
 
-  bool is_solution(const Vect1D &);
+  bool is_solution(const Vect1D &) const;
+  bool is_row_active(ind_t i) const { return is_active(rows_.at(i).data()); }
+  bool is_col_active(ind_t i) const { return is_active(&heads_.at(i + 1)); }
 
   void reset(size_t depth = 0);
 
-  DLXMatrix permuted_columns(const Vect1D &perm);
-  DLXMatrix permuted_inv_columns(const Vect1D &perm);
-  DLXMatrix permuted_rows(const Vect1D &perm);
+  DLXMatrix permuted_columns(const Vect1D &perm) const;
+  DLXMatrix permuted_inv_columns(const Vect1D &perm) const;
+  DLXMatrix permuted_rows(const Vect1D &perm) const;
 
   std::string to_string() const;
 
@@ -125,6 +127,8 @@ class DLXMatrix {
     return (res > 0) ? res - 1 : std::numeric_limits<ind_t>::max();
   }
   bool is_primary(const Header *h) const { return get_col_id(h) < nb_primary_; }
+  bool is_active(const Node *nd) const;
+  bool is_active(const Header *h) const;
 
   Header *choose_min();
   void hide(Node *row);
@@ -221,6 +225,12 @@ class DLXMatrixIdent : private DLXMatrix {
   }
 
   ind_t choose(const OptId &opt) { return DLXMatrix::choose(get_opt_ind(opt)); }
+  bool is_item_active(const Item &i) const {
+    return is_row_active(items_[item_ind_.at(i)]);
+  }
+  bool is_opt_active(const OptId &i) const {
+    return is_col_active(ith_opt(i));
+  }
 
   bool search_iter() { return DLXMatrix::search_iter(); }
   std::vector<OptId> get_solution() {
