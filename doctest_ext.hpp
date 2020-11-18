@@ -16,6 +16,7 @@
 #define DOCTEST_EXT_HPP_
 
 #include <doctest/doctest.h>
+
 #include <cstdlib>  // exit
 #include <ostream>
 #include <sstream>  // ostringstream

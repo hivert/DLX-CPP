@@ -41,10 +41,10 @@ SQMatrix blocks, matrix;
 
 std::vector<item_t> set_box_option(int row, int col, int nb) {
   std::vector<item_t> res;
-  res.push_back({'r', row, nb});
-  res.push_back({'c', col, nb});
-  res.push_back({'s', row, col});
-  res.push_back({'b', blocks[row - 1][col - 1], nb});
+  res.emplace_back('r', row, nb);
+  res.emplace_back('c', col, nb);
+  res.emplace_back('s', row, col);
+  res.emplace_back('b', blocks[row - 1][col - 1], nb);
   return res;
 }
 
@@ -144,13 +144,13 @@ int main(int argc, char *argv[]) {
   auto tencode = std::chrono::high_resolution_clock::now();
   std::vector<item_t> items;
   for (int i = 1; i <= sq_size; i++)  // Square i,j occupied
-    for (int j = 1; j <= sq_size; j++) items.push_back({'s', i, j});
+    for (int j = 1; j <= sq_size; j++) items.emplace_back('s', i, j);
   for (int i = 1; i <= sq_size; i++)  // Block i occupied by j
-    for (int j = 1; j <= sq_size; j++) items.push_back({'b', i, j});
+    for (int j = 1; j <= sq_size; j++) items.emplace_back('b', i, j);
   for (int i = 1; i <= sq_size; i++)  // Row i occupied by j
-    for (int j = 1; j <= sq_size; j++) items.push_back({'r', i, j});
+    for (int j = 1; j <= sq_size; j++) items.emplace_back('r', i, j);
   for (int i = 1; i <= sq_size; i++)  // Col i occupied by j
-    for (int j = 1; j <= sq_size; j++) items.push_back({'c', i, j});
+    for (int j = 1; j <= sq_size; j++) items.emplace_back('c', i, j);
 
   DLX_backtrack::DLXMatrixIdent<item_t, opt_t, hash_tuple::hash<item_t>> M(
       std::move(items));  // items is no more needed
