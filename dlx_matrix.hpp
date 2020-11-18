@@ -18,14 +18,14 @@
 #ifndef DLX_MATRIX_HPP_
 #define DLX_MATRIX_HPP_
 
-#include <algorithm>   // transform
-#include <functional>  // bind
-#include <iostream>    // cout
-#include <limits>      // numeric_limits
-#include <string>
-#include <tuple>  // tie, ignore
-#include <unordered_map>
-#include <vector>
+#include <algorithm>      // transform
+#include <iostream>       // cout
+#include <limits>         // numeric_limits
+#include <string>         //
+#include <tuple>          // tie, ignore
+#include <type_traits>    // invoke_result_t
+#include <unordered_map>  //
+#include <vector>         //
 
 namespace DLX_backtrack {
 
@@ -187,15 +187,15 @@ class DLXMatrixIdent : private DLXMatrix {
   DLXMatrixIdent(Option &&items, const OptPairs &opts)
       : DLXMatrixIdent(std::move(items), items.size(), opts) {}
   DLXMatrixIdent(const Option &items, ind_t nb_primary, const OptPairs &opts)
-      : DLXMatrixIdent(Option(items), items.size(), opts) {}
+      : DLXMatrixIdent(Option(items), nb_primary, opts) {}
   DLXMatrixIdent(Option &&items, ind_t nb_primary, const OptPairs &opts)
       : DLXMatrixIdent(std::move(items), nb_primary) {
     for (const auto &[id, row] : opts) add_opt(id, row);
   }
   DLXMatrixIdent(const DLXMatrixIdent &) = default;
   DLXMatrixIdent &operator=(const DLXMatrixIdent &other) = default;
-  DLXMatrixIdent(DLXMatrixIdent &&) = default;
-  DLXMatrixIdent &operator=(DLXMatrixIdent &&other) = default;
+  DLXMatrixIdent(DLXMatrixIdent &&) noexcept = default;
+  DLXMatrixIdent &operator=(DLXMatrixIdent &&other) noexcept = default;
   ~DLXMatrixIdent() = default;
 
   using DLXMatrix::nb_choices, DLXMatrix::nb_dances;
@@ -216,7 +216,7 @@ class DLXMatrixIdent : private DLXMatrix {
   Option ith_opt(ind_t i) const {
     return vector_transform(ith_row_sparse(i),
                             [this](ind_t n) { return items_[n]; });
-  };
+  }
   ind_t get_opt_ind(const OptId &opt) const {
     auto pos = std::find(optids_.cbegin(), optids_.cend(), opt);
     if (pos == optids_.cend())
@@ -228,9 +228,7 @@ class DLXMatrixIdent : private DLXMatrix {
   bool is_item_active(const Item &i) const {
     return is_row_active(items_[item_ind_.at(i)]);
   }
-  bool is_opt_active(const OptId &i) const {
-    return is_col_active(ith_opt(i));
-  }
+  bool is_opt_active(const OptId &i) const { return is_col_active(ith_opt(i)); }
 
   bool search_iter() { return DLXMatrix::search_iter(); }
   std::vector<OptId> get_solution() {

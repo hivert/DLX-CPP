@@ -1,3 +1,4 @@
+#-extra-arg=-std=c++17
 ---
 Checks:          '*,-fuchsia*,-hicpp-braces-around-statements,-readability-braces-around-statements,-google-runtime-references'
 # Checks:          'clang-diagnostic-*,clang-analyzer-*'

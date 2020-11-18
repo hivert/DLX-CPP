@@ -515,13 +515,12 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method is_solution") {
   }
 }
 
-
 bool DLXMatrix::is_active(const Header *h) const {
   for (Header *c = master()->right; c != master(); c = c->right)
     if (c == h) return true;
   return false;
 }
-static void check_col_active(DLXMatrix M, std::vector<int> Sol) {
+static void check_col_active(const DLXMatrix &M, const std::vector<int> &Sol) {
   REQUIRE(M.nb_cols() == Sol.size());
   for (ind_t i = 0; i < M.nb_cols(); i++) {
     CAPTURE(i);
@@ -545,7 +544,7 @@ bool DLXMatrix::is_active(const Node *nd) const {
     if (nd == row) return true;
   return false;
 }
-static void check_row_active(DLXMatrix M, std::vector<int> Sol) {
+static void check_row_active(const DLXMatrix &M, const std::vector<int> &Sol) {
   REQUIRE(M.nb_rows() == Sol.size());
   for (ind_t i = 0; i < M.nb_rows(); i++) {
     CAPTURE(i);
