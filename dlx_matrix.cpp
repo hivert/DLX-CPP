@@ -135,6 +135,7 @@ DLXMatrix::DLXMatrix(ind_t nb_col, ind_t nb_primary)
       nb_choices(0),
       nb_dances(0) {
   for (ind_t i = 0; i <= nb_col; i++) {
+    heads_[i].col_id = i - 1;
     heads_[i].size = 0;
     heads_[i].node.up = heads_[i].node.down = &heads_[i].node;
     // heads_[i].node.head = &heads_[i];  // unused

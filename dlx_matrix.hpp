@@ -58,7 +58,7 @@ class DLXMatrix {
   };
 
   struct Header {
-    ind_t size;
+    ind_t size, col_id;
     Node node;
     Header *left, *right;
   };
@@ -128,10 +128,8 @@ class DLXMatrix {
   const Header *master() const { return &heads_[0]; }
 
   ind_t get_row_id(const Node *n) const { return n->row_id; }
-  ind_t get_col_id(const Header *h) const {
-    int res = std::distance(master(), h);
-    return (res > 0) ? res - 1 : std::numeric_limits<ind_t>::max();
-  }
+  ind_t get_col_id(const Header *h) const { return h->col_id; }
+
   bool is_primary(const Header *h) const { return get_col_id(h) < nb_primary_; }
   bool is_active(const Node *nd) const;
   bool is_active(const Header *h) const;
