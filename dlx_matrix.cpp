@@ -481,7 +481,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method is_row_active") {
   check_row_active(M6_10, {1, 0, 0, 1, 0, 0, 0, 0, 0, 0});
 }
 
-inline void DLXMatrix::hide(Node *row) __attribute__((always_inline)) {
+inline void DLXMatrix::hide(Node *row) {
   for (Node *nr = row->right; nr != row; nr = nr->right) {
     nr->up->down = nr->down;
     nr->down->up = nr->up;
@@ -489,27 +489,27 @@ inline void DLXMatrix::hide(Node *row) __attribute__((always_inline)) {
     nb_dances++;
   }
 }
-inline void DLXMatrix::cover(Header *col) __attribute__((always_inline)) {
+inline void DLXMatrix::cover(Header *col) {
   col->left->right = col->right;
   col->right->left = col->left;
   for (Node *row = col->node.down; row != &col->node; row = row->down) {
     hide(row);
   }
 }
-inline void DLXMatrix::choose(Node *nd) __attribute__((always_inline)) {
+inline void DLXMatrix::choose(Node *nd) {
   nb_choices++;
   work_.push_back(nd);
   for (Node *nr = nd->right; nr != nd; nr = nr->right) cover(nr->head);
 }
 
-inline void DLXMatrix::unhide(Node *row) __attribute__((always_inline)) {
+inline void DLXMatrix::unhide(Node *row) {
   for (Node *nr = row->left; nr != row; nr = nr->left) {
     nr->head->size++;
     nr->up->down = nr;
     nr->down->up = nr;
   }
 }
-inline void DLXMatrix::uncover(Header *col) __attribute__((always_inline)) {
+inline void DLXMatrix::uncover(Header *col) {
   col->left->right = col;
   col->right->left = col;
 
@@ -517,7 +517,7 @@ inline void DLXMatrix::uncover(Header *col) __attribute__((always_inline)) {
     unhide(row);
   }
 }
-inline void DLXMatrix::unchoose(Node *nd) __attribute__((always_inline)) {
+inline void DLXMatrix::unchoose(Node *nd) {
   for (Node *nr = nd->left; nr != nd; nr = nr->left) uncover(nr->head);
   work_.pop_back();
 }

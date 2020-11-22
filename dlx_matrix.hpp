@@ -27,6 +27,8 @@
 #include <unordered_map>  //
 #include <vector>         //
 
+#define DLX_INLINE __attribute__((always_inline)) inline
+
 namespace DLX_backtrack {
 
 namespace details {
@@ -140,12 +142,12 @@ class DLXMatrix {
  private:
 
   Header *choose_min();
-  void hide(Node *row);
-  void unhide(Node *row);
-  void cover(Header *col);
-  void uncover(Header *col);
-  void choose(Node *nd);
-  void unchoose(Node *nd);
+  DLX_INLINE void hide(Node *row);
+  DLX_INLINE void unhide(Node *row);
+  DLX_INLINE void cover(Header *col);
+  DLX_INLINE void uncover(Header *col);
+  DLX_INLINE void choose(Node *nd);
+  DLX_INLINE void unchoose(Node *nd);
   void search_rec_internal(size_t, Vect2D &);
 };
 
