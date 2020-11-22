@@ -34,29 +34,6 @@ using Vect1D = DLXMatrix::Vect1D;
 using Vect2D = DLXMatrix::Vect2D;
 using ind_t = DLXMatrix::ind_t;
 
-///////////////////////////////////////
-TEST_SUITE_BEGIN("[dlx_matrix]Errors");
-///////////////////////////////////////
-
-TEST_CASE("Exception size_mismatch_error") {
-  std::string message;
-  CHECK_THROWS_WITH_AS(throw size_mismatch_error("foo", 2, 3),
-                       "Wrong foo size: 3 (expecting 2)", size_mismatch_error);
-}
-void check_size(const std::string &s, ind_t expected, ind_t sz) {
-  if (sz != expected) throw size_mismatch_error(s, expected, sz);
-}
-TEST_CASE("Function check_size") {
-  CHECK_NOTHROW(check_size("bla", 2, 2));
-  CHECK_THROWS_AS(check_size("bla", 2, 3), size_mismatch_error);
-}
-
-TEST_CASE("Exception empty_error") {
-  std::string message;
-  CHECK_THROWS_WITH_AS(throw empty_error("foo"), "Empty foo are not allowed",
-                       empty_error);
-}
-
 /////////////////////////////////////////
 TEST_SUITE_END();  // [dlx_matrix]Errors;
 /////////////////////////////////////////
@@ -167,12 +144,7 @@ DLXMatrix::DLXMatrix(ind_t nb_col, ind_t nb_primary)
   heads_[nb_col].right = &heads_[0];
   for (ind_t i = 0; i < nb_col; i++) heads_[i].right = &heads_[i + 1];
   heads_[0].left = &heads_[nb_col];
-  // heads_[0].col_id =  // large enough sentinel value for choose_min
-  //    std::numeric_limits<ind_t>::max();
-  for (ind_t i = 1; i <= nb_col; i++) {
-    // heads_[i].col_id = i - 1;
-    heads_[i].left = &heads_[i - 1];
-  }
+  for (ind_t i = 1; i <= nb_col; i++) heads_[i].left = &heads_[i - 1];
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Constructor DLXMatrix(ind_t)") {
   CHECK(empty0.nb_cols() == 0);
@@ -201,27 +173,15 @@ DLXMatrix::DLXMatrix(ind_t nb_col, ind_t nb_primary, const Vect2D &rows)
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture,
                   "Constructor DLXMatrix(ind_t, const Vect2D &))") {
-  SUBCASE("Correct rows") {
-    CHECK(M5_2.nb_cols() == 5);
-    CHECK(M5_2.nb_rows() == 2);
-    CHECK(M6_10.nb_cols() == 6);
-    CHECK(M6_10.nb_rows() == 10);
-  }
-  SUBCASE("Row out of range") {
-    CHECK_THROWS_AS(DLXMatrix(5, {{0, 1}, {2, 3, 5}}), std::out_of_range);
-    CHECK_THROWS_AS(DLXMatrix(3, {{0, 5}}), std::out_of_range);
-  }
+  CHECK(M5_2.nb_cols() == 5);
+  CHECK(M5_2.nb_rows() == 2);
+  CHECK(M6_10.nb_cols() == 6);
+  CHECK(M6_10.nb_rows() == 10);
 }
 TEST_CASE("Constructor DLXMatrix(ind_t, ind_t, const Vect2D &))") {
-  SUBCASE("Correct call") {
-    CHECK_NOTHROW(DLXMatrix(0, 0, {}));
-    CHECK_NOTHROW(DLXMatrix(1, 1, {{0}}));
-    CHECK_NOTHROW(DLXMatrix(3, 2, {{0}, {1, 2}}));
-  }
-  SUBCASE("Row out of range") {
-    CHECK_THROWS_AS(DLXMatrix(5, 4, {{0, 1}, {2, 3, 5}}), std::out_of_range);
-    CHECK_THROWS_AS(DLXMatrix(3, 3, {{0, 5}}), std::out_of_range);
-  }
+  CHECK_NOTHROW(DLXMatrix(0, 0, {}));
+  CHECK_NOTHROW(DLXMatrix(1, 1, {{0}}));
+  CHECK_NOTHROW(DLXMatrix(3, 2, {{0}, {1, 2}}));
 }
 
 DLXMatrix::DLXMatrix(const DLXMatrix &other)
@@ -295,7 +255,7 @@ Vect1D DLXMatrix::row_sparse(const std::vector<Node> &row) const {
   return r;
 }
 Vect1D DLXMatrix::ith_row_sparse(ind_t i) const {
-  return row_sparse(rows_.at(i));
+  return row_sparse(rows_[i]);
 }
 TEST_CASE("Method ith_row_sparse") {
   DLXMatrix M(5, {{0, 1}, {2, 3, 4}, {1, 2, 4}});
@@ -308,7 +268,7 @@ std::vector<bool> DLXMatrix::row_dense(const std::vector<Node> &row) const {
   return row_to_dense(DLXMatrix::row_sparse(row));
 }
 std::vector<bool> DLXMatrix::ith_row_dense(ind_t i) const {
-  return row_dense(rows_.at(i));
+  return row_dense(rows_[i]);
 }
 TEST_CASE("Method ith_row_dense") {
   DLXMatrix M(5, {{0, 1}, {2, 3, 4}, {1, 2, 4}});
@@ -321,7 +281,8 @@ void DLXMatrix::check_sizes() const {
   for (Header *h = master()->right; h != master(); h = h->right) {
     ind_t irows = 0;
     for (Node *p = h->node.down; p != &h->node; p = p->down) irows++;
-    check_size("column", h->size, irows);
+    if (h->size != irows)
+      throw std::runtime_error("check_size : size missmatch !");
   }
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method check_sizes") {
@@ -332,9 +293,10 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method check_sizes") {
 }
 
 ind_t DLXMatrix::add_row_sparse(const Vect1D &r) {
-  if (r.empty()) throw empty_error("rows");
+  // Assume that the row is not empty and correct
+  // if (r.empty()) throw empty_error("rows");
   // Check for bound before modifying anything
-  for (ind_t i : r) heads_.at(i + 1);
+  // for (ind_t i : r) heads_.at(i + 1);
 
   ind_t row_id = rows_.size();
   rows_.emplace_back(r.size());
@@ -342,9 +304,9 @@ ind_t DLXMatrix::add_row_sparse(const Vect1D &r) {
 
   for (size_t i = 0; i < r.size(); i++) {
     auto &h = heads_[r[i] + 1];
+    h.size++;
     row[i].row_id = row_id;
     row[i].head = &h;
-    h.size++;
     row[i].down = &h.node;
     row[i].up = h.node.up;
     row[i].up->down = h.node.up = &row[i];
@@ -361,8 +323,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_sparse") {
       CAPTURE(M);
       DLXMatrix MSave(M);
       if (M.nb_cols() >= 4) {
-        ind_t rid;
-        CHECK_NOTHROW((rid = M.add_row_sparse({2, 3})));
+        ind_t rid = M.add_row_sparse({2, 3});
         CHECK(rid == MSave.nb_rows());
         CHECK(M.nb_cols() == MSave.nb_cols());
         REQUIRE(M.nb_rows() == MSave.nb_rows() + 1);
@@ -373,75 +334,42 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_sparse") {
       }
     }
   }
-  SUBCASE("Check that row is unchanged by failed add of out of bound row") {
-    for (auto &M : TestSample) {
-      CAPTURE(M);
-      DLXMatrix MSave(M);
-      if (M.nb_cols() < 4) {
-        CHECK_THROWS_AS(M.add_row_sparse({2, 3}), std::out_of_range);
-        CHECK(M.nb_cols() == MSave.nb_cols());
-        REQUIRE(M.nb_rows() == MSave.nb_rows());
-        for (ind_t i = 0; i < MSave.nb_rows(); i++)
-          CHECK(M.ith_row_sparse(i) == MSave.ith_row_sparse(i));
-        CHECK_NOTHROW(M.check_sizes());
-      }
-    }
-  }
-  SUBCASE("Empty row are not allowed") {
-    DLXMatrix MSave(M5_3);
-    CHECK_THROWS_WITH_AS(M5_3.add_row_sparse({}), "Empty rows are not allowed",
-                         empty_error);
-    CHECK(M5_3.nb_cols() == MSave.nb_cols());
-    REQUIRE(M5_3.nb_rows() == MSave.nb_rows());
-    for (ind_t i = 0; i < MSave.nb_rows(); i++)
-      CHECK(M5_3.ith_row_sparse(i) == MSave.ith_row_sparse(i));
-    CHECK_NOTHROW(M5_3.check_sizes());
-  }
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row") {
   CHECK(M5_3.add_row({2, 3}) == 3);
   CHECK(M5_3.ith_row_sparse(3) == Vect1D({2, 3}));
-  CHECK_THROWS_WITH_AS(M5_3.add_row({}), "Empty rows are not allowed",
-                       empty_error);
 }
 
 Vect1D DLXMatrix::row_to_sparse(const std::vector<bool> &row) const {
-  check_size("row", nb_cols(), row.size());
+  // No check is performed
+  // check_size("row", nb_cols(), row.size());
   Vect1D res;
-  for (size_t i = 0; i < row.size(); i++) {
+  for (size_t i = 0; i < row.size(); i++)
     if (row[i]) res.push_back(i);
-  }
   return res;
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method row_to_sparse") {
   CHECK(M5_3.row_to_sparse({0, 1, 1, 0, 0}) == Vect1D({1, 2}));
   CHECK(M5_3.row_to_sparse({0, 1, 0, 1, 1}) == Vect1D({1, 3, 4}));
-  CHECK_THROWS_WITH_AS(M5_3.row_to_sparse({0, 1, 1, 0, 1, 1}),
-                       "Wrong row size: 6 (expecting 5)", size_mismatch_error);
-  CHECK_THROWS_WITH_AS(M5_3.row_to_sparse({0, 1, 1, 0}),
-                       "Wrong row size: 4 (expecting 5)", size_mismatch_error);
 }
 
 std::vector<bool> DLXMatrix::row_to_dense(Vect1D row) const {
-  // Check for bound
-  for (ind_t i : row) heads_.at(i + 1);
+  // No check for bound
+  // for (ind_t i : row) heads_.at(i + 1);
   std::sort(row.begin(), row.end());
   std::vector<bool> res(nb_cols(), false);
-  auto it = row.begin();
-  ind_t i = 0;
-  while (i < nb_cols() && it < row.end()) {
+  auto it = row.cbegin(), end = row.cend();
+  for (ind_t i = 0; it < end; i++) {
     if (i == *it) {
       res[i] = true;
       it++;
     }
-    i++;
   }
   return res;
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method row_to_dense") {
   CHECK(M5_3.row_to_dense({1, 2}) == std::vector<bool>({0, 1, 1, 0, 0}));
   CHECK(M5_3.row_to_dense({1, 3, 4}) == std::vector<bool>({0, 1, 0, 1, 1}));
-  CHECK_THROWS_AS(M5_3.row_to_dense({1, 3, 5}), std::out_of_range);
 }
 
 ind_t DLXMatrix::add_row_dense(const std::vector<bool> &r) {
@@ -450,10 +378,6 @@ ind_t DLXMatrix::add_row_dense(const std::vector<bool> &r) {
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method add_row_dense") {
   CHECK(M5_3.add_row_dense({0, 0, 1, 1, 0}) == 3);
   CHECK(M5_3.ith_row_sparse(3) == Vect1D({2, 3}));
-  CHECK_THROWS_WITH_AS(M5_3.add_row_dense({0, 1, 1, 0}),
-                       "Wrong row size: 4 (expecting 5)", size_mismatch_error);
-  CHECK_THROWS_WITH_AS(M5_3.add_row_dense({0, 1, 1, 0, 1, 0}),
-                       "Wrong row size: 6 (expecting 5)", size_mismatch_error);
 }
 
 bool DLXMatrix::is_solution(const Vect1D &sol) const {
@@ -471,11 +395,9 @@ bool DLXMatrix::is_solution(const Vect1D &sol) const {
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method is_solution") {
   SUBCASE("Empty 0x0 Matrix") {
     CHECK(empty0.is_solution({}));
-    CHECK_THROWS_AS(empty0.is_solution({0}), std::out_of_range);
   }
   SUBCASE("Empty 0x5 Matrix") {
     CHECK_FALSE(empty5.is_solution({}));
-    CHECK_THROWS_AS(empty5.is_solution({0}), std::out_of_range);
   }
   SUBCASE("M5_2 Matrix") {
     CHECK_FALSE(M5_2.is_solution({}));
@@ -483,11 +405,9 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method is_solution") {
     CHECK_FALSE(M5_2.is_solution({1}));
     CHECK(M5_2.is_solution({0, 1}));
     CHECK(M5_2.is_solution({1, 0}));
-    CHECK_THROWS_AS(M5_2.is_solution({2}), std::out_of_range);
   }
   SUBCASE("M5_3 Matrix") {
     CHECK(M5_3.is_solution({0, 1}));
-    CHECK_THROWS_AS(M5_3.is_solution({1, 3}), std::out_of_range);
     for (const auto &s : {Vect1D{}, {0}, {1}, {2}, {0, 2}, {1, 2}, {0, 1, 2}}) {
       CAPTURE(s);
       CHECK_FALSE(M5_3.is_solution(s));
@@ -561,7 +481,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method is_row_active") {
   check_row_active(M6_10, {1, 0, 0, 1, 0, 0, 0, 0, 0, 0});
 }
 
-inline void DLXMatrix::hide(Node *row) {
+inline void DLXMatrix::hide(Node *row) __attribute__((always_inline)) {
   for (Node *nr = row->right; nr != row; nr = nr->right) {
     nr->up->down = nr->down;
     nr->down->up = nr->up;
@@ -569,27 +489,27 @@ inline void DLXMatrix::hide(Node *row) {
     nb_dances++;
   }
 }
-inline void DLXMatrix::cover(Header *col) {
+inline void DLXMatrix::cover(Header *col) __attribute__((always_inline)) {
   col->left->right = col->right;
   col->right->left = col->left;
   for (Node *row = col->node.down; row != &col->node; row = row->down) {
     hide(row);
   }
 }
-inline void DLXMatrix::choose(Node *nd) {
+inline void DLXMatrix::choose(Node *nd) __attribute__((always_inline)) {
   nb_choices++;
   work_.push_back(nd);
   for (Node *nr = nd->right; nr != nd; nr = nr->right) cover(nr->head);
 }
 
-inline void DLXMatrix::unhide(Node *row) {
+inline void DLXMatrix::unhide(Node *row) __attribute__((always_inline)) {
   for (Node *nr = row->left; nr != row; nr = nr->left) {
     nr->head->size++;
     nr->up->down = nr;
     nr->down->up = nr;
   }
 }
-inline void DLXMatrix::uncover(Header *col) {
+inline void DLXMatrix::uncover(Header *col) __attribute__((always_inline)) {
   col->left->right = col;
   col->right->left = col;
 
@@ -597,7 +517,7 @@ inline void DLXMatrix::uncover(Header *col) {
     unhide(row);
   }
 }
-inline void DLXMatrix::unchoose(Node *nd) {
+inline void DLXMatrix::unchoose(Node *nd) __attribute__((always_inline)) {
   for (Node *nr = nd->left; nr != nd; nr = nr->left) uncover(nr->head);
   work_.pop_back();
 }
@@ -782,7 +702,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method reset") {
 }
 
 ind_t DLXMatrix::choose(ind_t i) {
-  Node *nd = rows_.at(i).data();
+  Node *nd = rows_[i].data();
   cover(nd->head);
   choose(nd);
   return ++depth_;
@@ -806,7 +726,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method choose") {
 }
 
 DLXMatrix DLXMatrix::permuted_inv_columns(const Vect1D &perm) const {
-  check_size("permutation", perm.size(), nb_cols());
+  // No check is performed
+  // check_size("permutation", perm.size(), nb_cols());
   DLXMatrix res(nb_cols());
   for (const auto &row : rows_) {
     Vect1D r;
@@ -873,8 +794,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method permuted_columns") {
 }
 
 DLXMatrix DLXMatrix::permuted_rows(const Vect1D &perm) const {
-  if (perm.size() != nb_rows())
-    throw size_mismatch_error("permutation", perm.size(), nb_rows());
+  // if (perm.size() != nb_rows())
+  //    throw size_mismatch_error("permutation", perm.size(), nb_rows());
   DLXMatrix res(nb_cols());
   for (ind_t i : perm) res.add_row_sparse(row_sparse(rows_[i]));
   return res;

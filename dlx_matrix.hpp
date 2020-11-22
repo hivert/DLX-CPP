@@ -29,6 +29,8 @@
 
 namespace DLX_backtrack {
 
+namespace details {
+
 template <typename A, typename Fun>
 inline std::vector<std::invoke_result_t<Fun, A>> vector_transform(
     const std::vector<A> &v, Fun fun) {
@@ -37,6 +39,8 @@ inline std::vector<std::invoke_result_t<Fun, A>> vector_transform(
   std::transform(v.cbegin(), v.cend(), std::back_inserter(res), fun);
   return res;
 }
+
+};
 
 /////////////////
 class DLXMatrix {
@@ -115,7 +119,7 @@ class DLXMatrix {
 
   std::string to_string() const;
 
-  int nb_choices, nb_dances;  // Computation statistics
+  unsigned long int nb_choices, nb_dances;  // Computation statistics
 
  protected:
   Header *master() { return &heads_[0]; }
@@ -130,6 +134,11 @@ class DLXMatrix {
   bool is_active(const Node *nd) const;
   bool is_active(const Header *h) const;
 
+  Vect1D row_sparse(const std::vector<Node> &) const;
+  std::vector<bool> row_dense(const std::vector<Node> &) const;
+
+ private:
+
   Header *choose_min();
   void hide(Node *row);
   void unhide(Node *row);
@@ -138,10 +147,6 @@ class DLXMatrix {
   void choose(Node *nd);
   void unchoose(Node *nd);
   void search_rec_internal(size_t, Vect2D &);
-
-  Vect1D row_sparse(const std::vector<Node> &) const;
-  std::vector<bool> row_dense(const std::vector<Node> &) const;
-  void print_solution(const std::vector<Node *> &) const;
 };
 
 // Concept check
@@ -209,13 +214,13 @@ class DLXMatrixIdent : private DLXMatrix {
 
   ind_t add_opt(const OptId &optid, const Option &opt) {
     optids_.push_back(optid);
-    return DLXMatrix::add_row_sparse(vector_transform(
+    return DLXMatrix::add_row_sparse(details::vector_transform(
         opt, [this](const Item &n) -> ind_t { return item_ind_.at(n); }));
   }
   using DLXMatrix::ith_row_sparse, DLXMatrix::ith_row_dense;
   Option ith_opt(ind_t i) const {
-    return vector_transform(ith_row_sparse(i),
-                            [this](ind_t n) { return items_[n]; });
+    return details::vector_transform(ith_row_sparse(i),
+                                     [this](ind_t n) { return items_[n]; });
   }
   ind_t get_opt_ind(const OptId &opt) const {
     auto pos = std::find(optids_.cbegin(), optids_.cend(), opt);
@@ -232,33 +237,18 @@ class DLXMatrixIdent : private DLXMatrix {
 
   bool search_iter() { return DLXMatrix::search_iter(); }
   std::vector<OptId> get_solution() {
-    return vector_transform(DLXMatrix::get_solution(),
+    return details::vector_transform(DLXMatrix::get_solution(),
                             [this](ind_t n) { return optids_[n]; });
   }
 
   bool is_solution(const std::vector<OptId> &sol) {
-    return DLXMatrix::is_solution(vector_transform(
+    return DLXMatrix::is_solution(details::vector_transform(
         sol, [this](const OptId &opt) { return get_opt_ind(opt); }));
   }
 };
 
 using DLXMatrixNamed = DLXMatrixIdent<std::string, std::string>;
 
-///////////////////////////////////////////////////////////
-// Errors and input validation
-struct size_mismatch_error : public std::runtime_error {
-  size_mismatch_error(const std::string &s, DLXMatrix::ind_t expected,
-                      DLXMatrix::ind_t sz)
-      : std::runtime_error("Wrong " + s + " size: " + std::to_string(sz) +
-                           " (expecting " + std::to_string(expected) + ")") {}
-};
-void check_size(const std::string &s, DLXMatrix::ind_t expected,
-                DLXMatrix::ind_t sz);
-
-struct empty_error : public std::runtime_error {
-  explicit empty_error(const std::string &s)
-      : std::runtime_error("Empty " + s + " are not allowed") {}
-};
 
 ///////////////////////////////////////////////////////////
 // Various related functions
