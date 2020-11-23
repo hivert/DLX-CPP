@@ -551,98 +551,13 @@ class TT(object):
         sage: T.solve()
         [{(0, 0): 1, (0, 1): 2, (0, 2): 3, (0, 3): 1}]
         """
-        from sage.combinat.matrices.dlxcpp import AllExactCovers as AllCovers
-        M, L = self.DLXmatrix
-        res = list(AllCovers(M))
-        return [self.DLXsol(sol) for sol in res]
-
-    def DLXsol(self, sol):
-        r"""
-        sage: T = TT(["AAAB"], {(0, 1) : 2})
-        sage: S = T.solve(); len(S)
-        1
-        sage: print(T.to_string(S[0]))
-        +---+---+---+---+
-        | 1   2   3 | 1 |
-        +---+---+---+---+
-
-        sage: T = TT(["AAAB"], {(0, 0) : 3})
-        sage: S = T.solve(); len(S)
-        1
-        sage: print(T.to_string(S[0]))
-        +---+---+---+---+
-        | 3   1   2 | 1 |
-        +---+---+---+---+
-
-        sage: T = TT(["AAAB"], {(0, 2) : 1})
-        sage: S = T.solve(); len(S)
-        0
-
-        sage: T = TT(["AAAA", "BBBB"], {(0, 0) : 1, (0, 1) : 2})
-        sage: S = T.solve(); len(S)
-        2
-        sage: print(T.to_string(S[0]))
-        +---+---+---+---+
-        | 1   2   3   4 |
-        +---+---+---+---+
-        | 3   4   1   2 |
-        +---+---+---+---+
-        sage: print(T.to_string(S[1]))
-        +---+---+---+---+
-        | 1   2   4   3 |
-        +---+---+---+---+
-        | 4   3   1   2 |
-        +---+---+---+---+
-
-        sage: T = TT(["AAAB", "CAAB", "CCBB", "CCDD", "EEDD"],
-        ....:        {(0, 1) : 2, (1, 3) : 4, (3, 0) : 3, (4, 3) : 3})
-        sage: S = T.solve(); len(S)
-        1
-        sage: print(T.to_string(S[0]))
-        +---+---+---+---+
-        | 4   2   1 | 2 |
-        +---+   +   +   +
-        | 1 | 3   5 | 4 |
-        +   +---+---+   +
-        | 4   2 | 1   3 |
-        +   +   +---+---+
-        | 3   5 | 4   2 |
-        +---+---+   +   +
-        | 1   2 | 1   3 |
-        +---+---+---+---+
-
-        sage: S = T28_151.solve(); len(S)
-        1
-        sage: print(T28_151.to_string(S[0]))
-        +---+---+---+---+---+---+---+---+---+
-        | 3 | 1   3   2 | 1   2 | 1   2   5 |
-        +   +---+---+---+   +---+---+   +   +
-        | 4   2 | 4 | 5   4 | 5   4 | 3   4 |
-        +   +   +   +   +---+   +   +---+---+
-        | 1   5 | 1 | 3 | 2 | 3   1   2 | 1 |
-        +---+---+   +---+   +---+---+---+   +
-        | 2 | 3   2 | 4   5 | 4   5 | 4   5 |
-        +   +   +---+   +---+   +   +   +   +
-        | 1 | 5 | 1   3 | 1   3   2 | 3   2 |
-        +   +---+---+---+---+---+---+---+---+
-        | 4 | 3   4   5 | 2   5 | 1   5 | 1 |
-        +   +   +   +---+   +   +   +   +---+
-        | 5 | 1   2 | 3   1   4 | 3   2 | 3 |
-        +   +---+---+---+---+---+---+   +   +
-        | 3 | 4   5 | 4   2   5   1 | 4 | 1 |
-        +---+   +   +   +---+---+---+---+   +
-        | 1 | 2   1 | 3 | 1 | 4   2   3 | 5 |
-        +---+   +---+---+   +---+   +---+   +
-        | 5 | 3 | 5   4   2   3 | 1 | 4   2 |
-        +   +---+---+---+---+---+---+---+---+
-        | 2   4   1   3 | 1   4   2   3   5 |
-        +---+---+---+---+---+---+---+---+---+
-        """
-        M, L = self.DLXmatrix
-        M = list(M)
-        res = [L[M.index(r)] for r in sol]
-        res = [x for x in res if x is not None]
-        return {(r, c) : l for (r, c, l, _) in res}
+        from sage.combinat.matrices.dlxcpp import DLXCPP
+        Mrows, L = self.DLXrows
+        def sol_from_DLX(sol):
+            res = [L[i] for i in sol if L[i] is not None]
+            return {(r, c) : l for (r, c, l, _) in res}
+        rows = [self.DLXrow2sparse(row) for row in Mrows]
+        return [sol_from_DLX(s) for s in DLXCPP(rows)]
 
     def rand_sol(self):
         r"""
