@@ -513,8 +513,6 @@ class TT(object):
             pipe.stdin.write((' '.join(r)+'\n').encode())
         pipe.stdin.close()
 
-        M, L = self.DLXmatrix
-        M = list(M)
         respipe = pipe.stdout
         rdsol = False
         sol = []
