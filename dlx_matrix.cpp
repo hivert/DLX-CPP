@@ -824,23 +824,28 @@ bool DLXMatrix::search_random(Vect1D &sol) {
 
   Vect1D col_perm(nb_cols());
   std::iota(col_perm.begin(), col_perm.end(), 0);
-  std::shuffle(col_perm.begin(), col_perm.end(), rng);
+  std::shuffle(col_perm.begin(), col_perm.begin() + nb_primary_, rng);
 
   DLXMatrix M = permuted_columns(col_perm).permuted_rows(row_perm);
-  bool res;
-  if ((res = M.search_iter())) {
-    Vect1D v = M.get_solution();
-    sol.resize(v.size());
-    for (size_t i = 0; i < v.size(); i++) sol[i] = row_perm[v[i]];
-  }
-  return res;
+  if (!M.search_iter()) return false;
+  Vect1D v = M.get_solution();
+  sol.resize(v.size());
+  for (size_t i = 0; i < v.size(); i++) sol[i] = row_perm[v[i]];
+  return true;
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method search_random") {
-  for (ind_t i = 0; i < 20; i++) {
+  for (DLXMatrix &M : TestSample) {
+    CAPTURE(M);
     Vect1D sol;
-    REQUIRE(M6_10.search_random(sol));
-    CAPTURE(sol);
-    CHECK(M6_10.is_solution(sol));
+    bool has_sol = M.search_iter();
+    REQUIRE(M.search_random(sol) == has_sol);
+    if (has_sol) {
+      for (ind_t i = 0; i < 20; i++) {
+        REQUIRE(M.search_random(sol));
+        CAPTURE(sol);
+        CHECK(M.is_solution(sol));
+      }
+    }
   }
 }
 

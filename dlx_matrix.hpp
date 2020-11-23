@@ -108,8 +108,8 @@ class DLXMatrix {
   bool search_iter(Vect1D &);
   Vect1D get_solution();
   bool search_random(Vect1D &);
-
   bool is_solution(const Vect1D &) const;
+
   bool is_row_active(ind_t i) const { return is_active(rows_.at(i).data()); }
   bool is_col_active(ind_t i) const { return is_active(&heads_.at(i + 1)); }
 
