@@ -248,11 +248,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "DLXMatrix::operator=") {
 }
 
 Vect1D DLXMatrix::row_sparse(const std::vector<Node> &row) const {
-  Vect1D r;
-  r.reserve(row.size());
-  std::transform(row.begin(), row.end(), std::back_inserter(r),
-                 [this](const Node &n) -> ind_t { return get_col_id(n.head); });
-  return r;
+  return details::vector_transform(
+      row, [this](const Node &n) -> ind_t { return get_col_id(n.head); });
 }
 Vect1D DLXMatrix::ith_row_sparse(ind_t i) const {
   return row_sparse(rows_[i]);
@@ -666,11 +663,8 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method search_iter") {
 }
 
 Vect1D DLXMatrix::get_solution() {
-  Vect1D r;
-  r.reserve(work_.size());
-  std::transform(work_.begin(), work_.end(), std::back_inserter(r),
-                 [this](Node *n) -> ind_t { return get_row_id(n); });
-  return r;
+  return details::vector_transform(
+      work_, [this](Node *n) -> ind_t { return get_row_id(n); });
 }
 TEST_CASE_FIXTURE(DLXMatrixFixture, "Method get_solution") {
   CHECK(M6_10.get_solution() == Vect1D({}));

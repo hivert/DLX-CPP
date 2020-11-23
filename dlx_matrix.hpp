@@ -129,8 +129,8 @@ class DLXMatrix {
 
   ind_t get_row_id(const Node *n) const { return n->row_id; }
   ind_t get_col_id(const Header *h) const {
-    int res = std::distance(master(), h);
-    return (res > 0) ? res - 1 : std::numeric_limits<ind_t>::max();
+    // Ensure that the following - 1 wraps
+    return static_cast<size_t>(std::distance(master(), h)) - 1;
   }
   bool is_primary(const Header *h) const { return get_col_id(h) < nb_primary_; }
   bool is_active(const Node *nd) const;
