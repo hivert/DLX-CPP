@@ -724,12 +724,10 @@ DLXMatrix DLXMatrix::permuted_inv_columns(const Vect1D &perm) const {
   // check_size("permutation", perm.size(), nb_cols());
   DLXMatrix res(nb_cols());
   for (const auto &row : rows_) {
-    Vect1D r;
-    std::transform(row.begin(), row.end(), std::back_inserter(r),
-                   [this, &perm](const Node &n) -> ind_t {
-                     return perm[get_col_id(n.head)];
-                   });
-    res.add_row_sparse(r);
+    res.add_row_sparse(details::vector_transform(
+        row, [this, &perm](const Node &n) -> ind_t {
+          return perm[get_col_id(n.head)];
+        }));
   }
   return res;
 }
@@ -815,8 +813,7 @@ TEST_CASE_FIXTURE(DLXMatrixFixture, "Method permuted_rows") {
 }
 
 bool DLXMatrix::search_random(Vect1D &sol) {
-  std::random_device rd{};
-  std::default_random_engine rng{rd()};
+  static std::mt19937 rng{std::random_device {}()};
 
   Vect1D row_perm(nb_rows());
   std::iota(row_perm.begin(), row_perm.end(), 0);
@@ -826,7 +823,7 @@ bool DLXMatrix::search_random(Vect1D &sol) {
   std::iota(col_perm.begin(), col_perm.end(), 0);
   std::shuffle(col_perm.begin(), col_perm.begin() + nb_primary_, rng);
 
-  DLXMatrix M = permuted_columns(col_perm).permuted_rows(row_perm);
+  DLXMatrix M = permuted_inv_columns(col_perm).permuted_rows(row_perm);
   if (!M.search_iter()) return false;
   Vect1D v = M.get_solution();
   sol.resize(v.size());

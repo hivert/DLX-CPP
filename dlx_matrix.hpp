@@ -173,7 +173,7 @@ class DLXMatrixIdent : private DLXMatrix {
 
   DLXMatrixIdent() : DLXMatrixIdent({}, 0) {}
   explicit DLXMatrixIdent(const Option &items)
-      : DLXMatrixIdent(Option(items), items.size()) {}
+     : DLXMatrixIdent(Option(items), items.size()) {}
   explicit DLXMatrixIdent(Option &&items)
       : DLXMatrixIdent(std::move(items), items.size()) {}
   DLXMatrixIdent(const Option &items, ind_t nb_primary)
@@ -189,6 +189,11 @@ class DLXMatrixIdent : private DLXMatrix {
       if (!res) throw std::runtime_error("DLXMatrixIdent : Duplicate item");
     }
   }
+  // template <typename... Args>
+  // DLXMatrixIdent(Args&&... args, const OptPairs &opts)
+  //     : DLXMatrixIdent(std::forward<Args>(args)...) {
+  //   for (const auto &[id, row] : opts) add_opt(id, row);
+  // }
   DLXMatrixIdent(const Option &items, const OptPairs &opts)
       : DLXMatrixIdent(Option(items), items.size(), opts) {}
   DLXMatrixIdent(Option &&items, const OptPairs &opts)
